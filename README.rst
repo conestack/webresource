@@ -5,7 +5,7 @@ Describe resources which should be delivered TTW.
 
 Declare resources:
 
-..code-block: python::
+.. code-block:: python
 
     from webresource import css_resource
     from webresource import js_resource
@@ -70,7 +70,7 @@ Declare resources:
 
 Define development and live mode:
 
-..code-block: python::
+.. code-block:: python
 
     from webresource import MODE_DEVELOPMENT
     from webresource import MODE_LIVE
@@ -80,7 +80,7 @@ Define development and live mode:
 
 Deliver resources:
 
-..code-block: python::
+.. code-block:: python
 
     from webresource import css
     from webresource import html
@@ -90,7 +90,7 @@ Deliver resources:
 
 Dump definitons as JSON:
 
-..code-block: python::
+.. code-block:: python
 
     js_dump = js.dump(dialect=None)
     css_dump = css.dump()
