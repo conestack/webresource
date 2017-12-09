@@ -1,3 +1,5 @@
+from webresource.compat import add_metaclass
+import abc
 import inspect
 import logging
 import os
@@ -6,20 +8,22 @@ import os
 logger = logging.getLogger('webresource')
 
 
+@add_metaclass(abc.ABCMeta)
 class Resource(object):
     """A web resource.
     """
 
-    def __init__(self, uid, depends=None, source=None, sourcedir=None,
-                 target=None, compiler=None, prefix='/'):
+    def __init__(self, uid, depends=None, source=None, source_dir=None,
+                 target=None, compiler=None, compiler_opts=None, prefix='/'):
         """Create resource instance.
 
         :param uid: The resource unique identifier.
         :param depends: Optional uid or list of uids of dependency resource.
         :param source: Source file for this resource.
-        :param sourcedir: Directory containing the source files.
+        :param source_dir: Directory containing the source files.
         :param target: Bundling target.
         :param compiler: Compiler to use.
+        :param compiler_opts: Dict containing compiler options.
         :param prefix: Prefix for html tag link creation.
         """
         self.uid = uid
@@ -29,9 +33,10 @@ class Resource(object):
             depends = [depends]
         self.depends = depends
         self.source = source
-        self.sourcedir = sourcedir
+        self.source_dir = source_dir
         self.target = target
         self.compiler = compiler
+        self.compiler_opts = compiler_opts
         self.prefix = prefix
 
     def __repr__(self):
@@ -48,15 +53,50 @@ class Resource(object):
             self.prefix
         )
 
+    @abc.abstractproperty
+    def registry(self):
+        """Registry dict related to this resource.
+        """
+        raise NotImplemened()
+
+    @property
+    def source_path(self):
+        """Absolute path to resource source.
+        """
+        return os.path.join(self.source_dir, self.source)
+
+    @property
+    def target_path(self):
+        """Absolute path to resource target.
+        """
+        target = self.target
+        if not target:
+            target = self.source
+        if target.startswith('uid:'):
+            return self.registry[target[4:]].target_path
+        return os.path.join(self.source_dir, target)
+
 
 class JSResource(Resource):
     """A Javascript resource.
     """
 
+    @property
+    def registry(self):
+        """Javascript registry dict.
+        """
+        return resource_registry.js
+
 
 class CSSResource(Resource):
     """A CSS Resource.
     """
+
+    @property
+    def registry(self):
+        """CSS registry dict.
+        """
+        return resource_registry.css
 
 
 class RegistryError(Exception):
@@ -68,12 +108,12 @@ class resource_registry(object):
     """Resource registry singleton.
     """
 
-    _js = dict()
-    """Javascript resources registry.
+    js = dict()
+    """Javascript resources registry dict.
     """
 
-    _css = dict()
-    """CSS resources registry.
+    css = dict()
+    """CSS resources registry dict.
     """
 
     @staticmethod
@@ -126,7 +166,7 @@ class resource_registry(object):
         """
         if not isinstance(res, JSResource):
             raise ValueError('{} is no ``JSResource`` instance'.format(res))
-        cls._register(cls._js, res)
+        cls._register(cls.js, res)
 
     @classmethod
     def resolve_js(cls):
@@ -135,7 +175,7 @@ class resource_registry(object):
 
         :return list: Javascript resources sorted by dependency.
         """
-        return cls._resolve(cls._js)
+        return cls._resolve(cls.js)
 
     @classmethod
     def register_css(cls, res):
@@ -145,7 +185,7 @@ class resource_registry(object):
         """
         if not isinstance(res, CSSResource):
             raise ValueError('{} is no ``CSSResource`` instance'.format(res))
-        cls._register(cls._css, res)        
+        cls._register(cls.css, res)
 
     @classmethod
     def resolve_css(cls):
@@ -154,11 +194,11 @@ class resource_registry(object):
 
         :return list: CSS resources sorted by dependency.
         """
-        return cls._resolve(cls._css)
+        return cls._resolve(cls.css)
 
 
-def js_resource(uid, depends=None, source=None,
-                target=None, compiler=None, prefix='/'):
+def js_resource(uid, depends=None, source=None, source_dir=None, target=None,
+                compiler=None, compiler_opts=None, prefix='/'):
     """Register a Javascript resource.
 
     :param uid: The resource unique identifier.
@@ -166,23 +206,26 @@ def js_resource(uid, depends=None, source=None,
     :param source: Source file for this resource.
     :param target: Bundling target.
     :param compiler: Compiler to use.
+    :param compiler_opts: Dict containing compiler options.
     :param prefix: Prefix for html tag link creation.
     """
-    module = inspect.getmodule(inspect.currentframe().f_back)
-    sourcedir = os.path.dirname(os.path.abspath(module.__file__))
+    if not source_dir:
+        module = inspect.getmodule(inspect.currentframe().f_back)
+        source_dir = os.path.dirname(os.path.abspath(module.__file__))
     resource_registry.register_js(JSResource(
         uid,
         depends=depends,
         source=source,
-        sourcedir=sourcedir,
+        source_dir=source_dir,
         target=target,
         compiler=compiler,
+        compiler_opts=compiler_opts,
         prefix=prefix
     ))
 
 
-def css_resource(uid, depends=None, source=None,
-                 target=None, compiler=None, prefix='/'):
+def css_resource(uid, depends=None, source=None, source_dir=None, target=None,
+                 compiler=None, compiler_opts=None, prefix='/'):
     """Register a CSS resource.
 
     :param uid: The resource unique identifier.
@@ -190,16 +233,19 @@ def css_resource(uid, depends=None, source=None,
     :param source: Source file for this resource.
     :param target: Bundling target.
     :param compiler: Compiler to use.
+    :param compiler_opts: Dict containing compiler options.
     :param prefix: Prefix for html tag link creation.
     """
-    module = inspect.getmodule(inspect.currentframe().f_back)
-    sourcedir = os.path.dirname(os.path.abspath(module.__file__))
+    if not source_dir:
+        module = inspect.getmodule(inspect.currentframe().f_back)
+        source_dir = os.path.dirname(os.path.abspath(module.__file__))
     resource_registry.register_css(CSSResource(
         uid,
         depends=depends,
         source=source,
-        sourcedir=sourcedir,
+        source_dir=source_dir,
         target=target,
         compiler=compiler,
+        compiler_opts=compiler_opts,
         prefix=prefix
     ))

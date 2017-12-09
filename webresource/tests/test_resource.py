@@ -2,31 +2,33 @@ from collections import OrderedDict
 from webresource.resource import CSSResource
 from webresource.resource import JSResource
 from webresource.resource import RegistryError
-from webresource.resource import Resource
+from webresource.resource import Resource as ResourceBase
 from webresource.resource import css_resource
 from webresource.resource import js_resource
 from webresource.resource import resource_registry
+from webresource.tests import BaseTestCase
 import logging
 import mock
-import unittest
 
 
-class TestResource(unittest.TestCase):
+class Resource(ResourceBase):
 
-    def assertRaisesWithMessage(self, msg, func, *args, **kwargs):
-        try:
-            func(*args, **kwargs)
-            self.assertFail()
-        except Exception as inst:
-            self.assertEqual(inst.message, msg)
+    @property
+    def registry(self):
+        return dict()
+
+
+class TestResource(BaseTestCase):
 
     def test_Resource__init__(self):
         r = Resource('uid')
         self.assertEqual(r.uid, 'uid')
         self.assertEqual(r.depends, [])
         self.assertEqual(r.source, None)
+        self.assertEqual(r.source_dir, None)
         self.assertEqual(r.target, None)
         self.assertEqual(r.compiler, None)
+        self.assertEqual(r.compiler_opts, None)
         self.assertEqual(r.prefix, '/')
 
         r = Resource('uid', depends='foo')
@@ -117,22 +119,22 @@ class TestResource(unittest.TestCase):
         )
         self.assertRaisesWithMessage(msg, resource_registry.register_js, res)
 
-        with mock.patch.dict(resource_registry._js, {}, clear=True):
+        with mock.patch.dict(resource_registry.js, {}, clear=True):
             res = JSResource('A')
             resource_registry.register_js(res)
-            self.assertEqual(resource_registry._js, {'A': res})
+            self.assertEqual(resource_registry.js, {'A': res})
 
-        self.assertEqual(resource_registry._js, {})
+        self.assertEqual(resource_registry.js, {})
 
     def test_resource_registry_resolve_js(self):
-        with mock.patch.dict(resource_registry._js, {}, clear=True):
+        with mock.patch.dict(resource_registry.js, {}, clear=True):
             a = JSResource('A', depends='B')
             resource_registry.register_js(a)
             b = JSResource('B')
             resource_registry.register_js(b)
             self.assertEqual(resource_registry.resolve_js(), [b, a])
 
-        self.assertEqual(resource_registry._js, {})
+        self.assertEqual(resource_registry.js, {})
 
     def test_resource_registry_register_css(self):
         res = JSResource('A')
@@ -142,25 +144,25 @@ class TestResource(unittest.TestCase):
         )
         self.assertRaisesWithMessage(msg, resource_registry.register_css, res)
 
-        with mock.patch.dict(resource_registry._css, {}, clear=True):
+        with mock.patch.dict(resource_registry.css, {}, clear=True):
             res = CSSResource('A')
             resource_registry.register_css(res)
-            self.assertEqual(resource_registry._css, {'A': res})
+            self.assertEqual(resource_registry.css, {'A': res})
 
-        self.assertEqual(resource_registry._css, {})
+        self.assertEqual(resource_registry.css, {})
 
     def test_resource_registry_resolve_css(self):
-        with mock.patch.dict(resource_registry._css, {}, clear=True):
+        with mock.patch.dict(resource_registry.css, {}, clear=True):
             a = CSSResource('A', depends='B')
             resource_registry.register_css(a)
             b = CSSResource('B')
             resource_registry.register_css(b)
             self.assertEqual(resource_registry.resolve_css(), [b, a])
 
-        self.assertEqual(resource_registry._css, {})
+        self.assertEqual(resource_registry.css, {})
 
     def test_js_resource(self):
-        with mock.patch.dict(resource_registry._js, {}, clear=True):
+        with mock.patch.dict(resource_registry.js, {}, clear=True):
             js_resource(
                 'app_scripts',
                 depends=None,
@@ -178,10 +180,10 @@ class TestResource(unittest.TestCase):
             )
             self.assertEqual(expected, str(res[0]))
 
-        self.assertEqual(resource_registry._js, {})
+        self.assertEqual(resource_registry.js, {})
 
     def test_css_resource(self):
-        with mock.patch.dict(resource_registry._css, {}, clear=True):
+        with mock.patch.dict(resource_registry.css, {}, clear=True):
             css_resource(
                 'app_styles',
                 depends=None,
@@ -199,4 +201,4 @@ class TestResource(unittest.TestCase):
             )
             self.assertEqual(expected, str(res[0]))
 
-        self.assertEqual(resource_registry._css, {})
+        self.assertEqual(resource_registry.css, {})

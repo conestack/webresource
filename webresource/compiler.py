@@ -1,6 +1,8 @@
 from six import StringIO
 from webresource.compat import add_metaclass
+from webresource.resource import resource_registry
 import abc
+import os
 
 
 class compiler(object):
@@ -24,6 +26,8 @@ class compiler(object):
         :param compiler: Compiler deriving class.
         :return object: Return passed compiler class.
         """
+        if not issubclass(compiler, Compiler):
+            raise ValueError('Given object is no Compiler deriving class')
         self._registry[self.name] = compiler
         return compiler
 
@@ -47,10 +51,10 @@ class Compiler(object):
     """
 
     @abc.abstractmethod
-    def compile(self, resource):
+    def compile(self, res):
         """Compile resource.
 
-        :param resource: ``webresource.resource.Resource`` instance.
+        :param res: ``webresource.resource.Resource`` instance.
         """
         raise NotImplemented()
 
@@ -68,10 +72,10 @@ class SlimitCompiler(Compiler):
         except ImportError:
             raise CompilerError('``slimit`` not installed')
 
-    def compile(self, resource):
+    def compile(self, res):
         """Compile resource.
 
-        :param resource: ``webresource.resource.Resource`` instance.
+        :param res: ``webresource.resource.Resource`` instance.
         """
         source = 'var foo = \'foo\';'
         slimit.minify(source, mangle=True, mangle_toplevel=True)
@@ -90,10 +94,10 @@ class LesscpyCompiler(Compiler):
         except ImportError:
             raise CompilerError('``lesscpy`` not installed')
 
-    def compile(self, resource):
+    def compile(self, res):
         """Compile resource.
 
-        :param resource: ``webresource.resource.Resource`` instance.
+        :param res: ``webresource.resource.Resource`` instance.
         """
         source = 'a { border-width: 2px * 3; }'
-        lesscpy.compile(StringIO(source), minify=True))
+        lesscpy.compile(StringIO(source), minify=True)
