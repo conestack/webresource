@@ -1,4 +1,6 @@
+import inspect
 import logging
+import os
 
 
 logger = logging.getLogger('webresource')
@@ -113,10 +115,13 @@ def js_resource(uid, depends=None, source=None,
     :param compiler: Compiler to use.
     :param prefix: WWW prefix for html tag link creation.
     """
+    module = inspect.getmodule(inspect.currentframe().f_back)
+    sourcedir = os.path.dirname(os.path.abspath(module.__file__))
     resource_registry.register_js(JSResource(
         uid,
         depends=depends,
         source=source,
+        sourcedir=sourcedir,
         target=target,
         compiler=compiler,
         prefix=prefix
@@ -134,10 +139,13 @@ def css_resource(uid, depends=None, source=None,
     :param compiler: Compiler to use.
     :param prefix: WWW prefix for html tag link creation.
     """
+    module = inspect.getmodule(inspect.currentframe().f_back)
+    sourcedir = os.path.dirname(os.path.abspath(module.__file__))
     resource_registry.register_css(CSSResource(
         uid,
         depends=depends,
         source=source,
+        sourcedir=sourcedir,
         target=target,
         compiler=compiler,
         prefix=prefix
@@ -148,13 +156,14 @@ class Resource(object):
     """A web resource.
     """
 
-    def __init__(self, uid, depends=None, source=None,
+    def __init__(self, uid, depends=None, source=None, sourcedir=None,
                  target=None, compiler=None, prefix='/'):
         """Create resource instance.
 
         :param uid: The resource unique identifier.
         :param depends: Optional uid or list of uids of dependency resource.
         :param source: Source file for this resource.
+        :param sourcedir: Directory containing the source files.
         :param target: Bundling target.
         :param compiler: Compiler to use.
         :param prefix: WWW prefix for html tag link creation.
@@ -166,6 +175,7 @@ class Resource(object):
             depends = [depends]
         self.depends = depends
         self.source = source
+        self.sourcedir = sourcedir
         self.target = target
         self.compiler = compiler
         self.prefix = prefix

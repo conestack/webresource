@@ -3,6 +3,8 @@ from webresource.resource import CSSResource
 from webresource.resource import JSResource
 from webresource.resource import RegistryError
 from webresource.resource import Resource
+from webresource.resource import css_resource
+from webresource.resource import js_resource
 from webresource.resource import resource_registry
 import logging
 import mock
@@ -154,5 +156,47 @@ class TestResource(unittest.TestCase):
             b = CSSResource('B')
             resource_registry.register_css(b)
             self.assertEqual(resource_registry.resolve_css(), [b, a])
+
+        self.assertEqual(resource_registry._css, {})
+
+    def test_js_resource(self):
+        with mock.patch.dict(resource_registry._js, {}, clear=True):
+            js_resource(
+                'app_scripts',
+                depends=None,
+                source='assets/app.js',
+                target='assets/app.min.js',
+                compiler='slimit',
+                prefix='/javascripts/'
+            )
+            res = resource_registry.resolve_js()
+            self.assertEqual(len(res), 1)
+            expected = (
+                '<JSResource object, uid=app_scripts, depends=[], '
+                'source=assets/app.js, target=assets/app.min.js, '
+                'compiler=slimit, prefix=/javascripts/>'
+            )
+            self.assertEqual(expected, str(res[0]))
+
+        self.assertEqual(resource_registry._js, {})
+
+    def test_css_resource(self):
+        with mock.patch.dict(resource_registry._css, {}, clear=True):
+            css_resource(
+                'app_styles',
+                depends=None,
+                source='assets/app.less',
+                target='assets/app.css',
+                compiler='lesscpy',
+                prefix='/stylesheets/'
+            )
+            res = resource_registry.resolve_css()
+            self.assertEqual(len(res), 1)
+            expected = (
+                '<CSSResource object, uid=app_styles, depends=[], '
+                'source=assets/app.less, target=assets/app.css, '
+                'compiler=lesscpy, prefix=/stylesheets/>'
+            )
+            self.assertEqual(expected, str(res[0]))
 
         self.assertEqual(resource_registry._css, {})
