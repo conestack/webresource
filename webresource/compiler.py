@@ -72,6 +72,13 @@ class Compiler(object):
         raise NotImplemented()
 
 
+try:
+    import slimit
+    SLIMIT_INSTALLED = True
+except ImportError:
+    SLIMIT_INSTALLED = False
+
+
 @compiler('slimit')
 class SlimitCompiler(Compiler):
     """Compiler utilizing ``slimit``.
@@ -88,9 +95,7 @@ class SlimitCompiler(Compiler):
     def __init__(self):
         """Initialize ``slimit`` compiler.
         """
-        try:
-            import slimit
-        except ImportError:
+        if not SLIMIT_INSTALLED:
             raise CompilerError('``slimit`` not installed')
 
     def compile(self, res):
@@ -103,7 +108,7 @@ class SlimitCompiler(Compiler):
             raise ValueError('{} is no ``JSResource`` instance'.format(res))
         mangle = self.mangle
         mangle_toplevel = self.mangle_toplevel
-        opts = res.compile_opts
+        opts = res.compiler_opts
         if opts:
             mangle = opts.get('mangle', mangle)
             mangle_toplevel = opts.get('mangle_toplevel', mangle_toplevel)
@@ -114,6 +119,13 @@ class SlimitCompiler(Compiler):
             mangle=mangle,
             mangle_toplevel=mangle_toplevel
         )
+
+
+try:
+    import lesscpy
+    LESSCPY_INSTALLED = True
+except ImportError:
+    LESSCPY_INSTALLED = False
 
 
 @compiler('lesscpy')
@@ -132,10 +144,8 @@ class LesscpyCompiler(Compiler):
     def __init__(self):
         """Initialize ``lesscpy`` compiler.
         """
-        try:
-            import lesscpy
-        except ImportError:
-            raise CompilerError('``lesscpy`` not installed')
+        if not LESSCPY_INSTALLED:
+            CompilerError('``lesscpy`` not installed')
 
     def compile(self, res):
         """Compile resource.
@@ -146,7 +156,7 @@ class LesscpyCompiler(Compiler):
         if not isinstance(res, CSSResource):
             raise ValueError('{} is no ``CSSResource`` instance'.format(res))
         minify = self.minify
-        opts = res.compile_opts
+        opts = res.compiler_opts
         if opts:
             minify = opts.get('minify', minify)
         with open(res.source_path, 'r') as source:

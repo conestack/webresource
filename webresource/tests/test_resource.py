@@ -61,12 +61,14 @@ class TestResource(BaseTestCase):
             a = reg['A'] = Resource(
                 'A', source='a', source_dir='/path', target='a.compiled')
             b = reg['B'] = Resource(
-                'B', depends='A', source='b', source_dir='/path', target='uid:A')
+                'B', depends='A', source='b', source_dir='/path',
+                target='uid:A')
             self.assertEqual(b.target_path, '/path/a.compiled')
 
             b.target = 'uid:a'
             msg = 'Dependency resource a not exists'
-            self.assertRaisesWithMessage(RegistryError, msg, lambda: b.target_path)
+            self.assertRaisesWithMessage(
+                RegistryError, msg, lambda: b.target_path)
 
         self.assertEqual(Resource.registry, {})
 
