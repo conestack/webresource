@@ -6,6 +6,59 @@ import os
 logger = logging.getLogger('webresource')
 
 
+class Resource(object):
+    """A web resource.
+    """
+
+    def __init__(self, uid, depends=None, source=None, sourcedir=None,
+                 target=None, compiler=None, prefix='/'):
+        """Create resource instance.
+
+        :param uid: The resource unique identifier.
+        :param depends: Optional uid or list of uids of dependency resource.
+        :param source: Source file for this resource.
+        :param sourcedir: Directory containing the source files.
+        :param target: Bundling target.
+        :param compiler: Compiler to use.
+        :param prefix: WWW prefix for html tag link creation.
+        """
+        self.uid = uid
+        if not depends:
+            depends = []
+        elif not isinstance(depends, list) and not isinstance(depends, tuple):
+            depends = [depends]
+        self.depends = depends
+        self.source = source
+        self.sourcedir = sourcedir
+        self.target = target
+        self.compiler = compiler
+        self.prefix = prefix
+
+    def __repr__(self):
+        return (
+            '<{} object, uid={}, depends={}, source={}, '
+            'target={}, compiler={}, prefix={}>'
+        ).format(
+            self.__class__.__name__,
+            self.uid,
+            self.depends,
+            self.source,
+            self.target,
+            self.compiler,
+            self.prefix
+        )
+
+
+class JSResource(Resource):
+    """A Javascript resource.
+    """
+
+
+class CSSResource(Resource):
+    """A CSS Resource.
+    """
+
+
 class RegistryError(Exception):
     """Resource registry related exception.
     """
@@ -150,56 +203,3 @@ def css_resource(uid, depends=None, source=None,
         compiler=compiler,
         prefix=prefix
     ))
-
-
-class Resource(object):
-    """A web resource.
-    """
-
-    def __init__(self, uid, depends=None, source=None, sourcedir=None,
-                 target=None, compiler=None, prefix='/'):
-        """Create resource instance.
-
-        :param uid: The resource unique identifier.
-        :param depends: Optional uid or list of uids of dependency resource.
-        :param source: Source file for this resource.
-        :param sourcedir: Directory containing the source files.
-        :param target: Bundling target.
-        :param compiler: Compiler to use.
-        :param prefix: WWW prefix for html tag link creation.
-        """
-        self.uid = uid
-        if not depends:
-            depends = []
-        elif not isinstance(depends, list) and not isinstance(depends, tuple):
-            depends = [depends]
-        self.depends = depends
-        self.source = source
-        self.sourcedir = sourcedir
-        self.target = target
-        self.compiler = compiler
-        self.prefix = prefix
-
-    def __repr__(self):
-        return (
-            '<{} object, uid={}, depends={}, source={}, '
-            'target={}, compiler={}, prefix={}>'
-        ).format(
-            self.__class__.__name__,
-            self.uid,
-            self.depends,
-            self.source,
-            self.target,
-            self.compiler,
-            self.prefix
-        )
-
-
-class JSResource(Resource):
-    """A Javascript resource.
-    """
-
-
-class CSSResource(Resource):
-    """A CSS Resource.
-    """
