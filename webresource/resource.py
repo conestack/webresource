@@ -4,6 +4,11 @@ import logging
 logger = logging.getLogger('webresource')
 
 
+class RegistryError(Exception):
+    """Resource registry related exception.
+    """
+
+
 class resource_registry(object):
     """Resource registry singleton.
     """
@@ -32,13 +37,23 @@ class resource_registry(object):
         """
         res = reg.keys()
         cnt = len(res)
+        deps = dict()
         def sort():
             for i in range(cnt):
-                for dep in res[i].depends:
-                    j = res.index(dep)
-                    if j < i:
+                for dep in reg[res[i]].depends:
+                    try:
+                        j = res.index(dep)
+                    except ValueError:
+                        msg = 'Dependency resource {} not exists'.format(dep)
+                        raise RegistryError(msg)
+                    deps.setdefault(res[i], set()).add(dep)
+                    if res[i] in deps.setdefault(dep, set()):
+                        msg = 'Circular dependency {} - {}'.format(dep, res[i])
+                        raise RegistryError(msg)
+                    if j > i:
                         res[i], res[j] = res[j], res[i]
                         sort()
+        sort()
         return [reg[k] for k in res]
 
     @classmethod
