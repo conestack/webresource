@@ -1,3 +1,4 @@
+from six import StringIO
 from webresource.compat import add_metaclass
 import abc
 
@@ -35,6 +36,11 @@ class compiler(object):
         return cls._registry.get(name)
 
 
+class CompilerError(Exception):
+    """Compiler related exception.
+    """
+
+
 @add_metaclass(abc.ABCMeta)
 class Compiler(object):
     """Abstract compiler object.
@@ -54,8 +60,40 @@ class SlimitCompiler(Compiler):
     """Compiler utilizing ``slimit``.
     """
 
+    def __init__(self):
+        """Initialize slimit compiler.
+        """
+        try:
+            import slimit
+        except ImportError:
+            raise CompilerError('``slimit`` not installed')
+
+    def compile(self, resource):
+        """Compile resource.
+
+        :param resource: ``webresource.resource.Resource`` instance.
+        """
+        source = 'var foo = \'foo\';'
+        slimit.minify(source, mangle=True, mangle_toplevel=True)
+
 
 @compiler('lesscpy')
 class LesscpyCompiler(Compiler):
     """Compiler utilizing ``lesscpy``.
     """
+
+    def __init__(self):
+        """Initialize lesscpy compiler.
+        """
+        try:
+            import lesscpy
+        except ImportError:
+            raise CompilerError('``lesscpy`` not installed')
+
+    def compile(self, resource):
+        """Compile resource.
+
+        :param resource: ``webresource.resource.Resource`` instance.
+        """
+        source = 'a { border-width: 2px * 3; }'
+        lesscpy.compile(StringIO(source), minify=True))

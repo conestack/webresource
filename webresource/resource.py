@@ -20,7 +20,7 @@ class Resource(object):
         :param sourcedir: Directory containing the source files.
         :param target: Bundling target.
         :param compiler: Compiler to use.
-        :param prefix: WWW prefix for html tag link creation.
+        :param prefix: Prefix for html tag link creation.
         """
         self.uid = uid
         if not depends:
@@ -166,7 +166,7 @@ def js_resource(uid, depends=None, source=None,
     :param source: Source file for this resource.
     :param target: Bundling target.
     :param compiler: Compiler to use.
-    :param prefix: WWW prefix for html tag link creation.
+    :param prefix: Prefix for html tag link creation.
     """
     module = inspect.getmodule(inspect.currentframe().f_back)
     sourcedir = os.path.dirname(os.path.abspath(module.__file__))
@@ -190,7 +190,7 @@ def css_resource(uid, depends=None, source=None,
     :param source: Source file for this resource.
     :param target: Bundling target.
     :param compiler: Compiler to use.
-    :param prefix: WWW prefix for html tag link creation.
+    :param prefix: Prefix for html tag link creation.
     """
     module = inspect.getmodule(inspect.currentframe().f_back)
     sourcedir = os.path.dirname(os.path.abspath(module.__file__))
