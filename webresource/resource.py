@@ -18,7 +18,7 @@ class resource_registry(object):
         :param res: Resouce instance.
         """
         if res.uid in reg:
-            ols_res = reg[res.uid]
+            old_res = reg[res.uid]
             msg = 'Resource {} gets overwritten with {}'.format(old_res, res)
             logger.info(msg)
         reg[res.uid] = res
@@ -30,19 +30,16 @@ class resource_registry(object):
 
         :param reg: Registry dict.
         """
-        deps = dict()
-        for res in reg.values():
-            depends = res.depends
-            # no dependency, continue
-            if not depends:
-                continue
-            # turn dependency into iterable if necessary
-            if not isinstance(depends, list) and not isinstance(depends, tuple):
-                depends = [depends]
-            # append resource to related dependencies
-            for dep in depends:
-                deps.setdefault(dep, list()).append(res)
-        # XXX: ...
+        res = reg.keys()
+        cnt = len(res)
+        def sort():
+            for i in range(cnt):
+                for dep in res[i].depends:
+                    j = res.index(dep)
+                    if j < i:
+                        res[i], res[j] = res[j], res[i]
+                        sort()
+        return [reg[k] for k in res]
 
     @classmethod
     def register_js(cls, res):
@@ -90,7 +87,17 @@ class Resource(object):
         :param depends: Optional uid or list of uids of dependency resource
         """
         self.uid = uid
-        self.depends = None
+        if not depends:
+            depends = []
+        elif not isinstance(depends, list) and not isinstance(depends, tuple):
+            depends = [depends]
+        self.depends = depends
+
+    def __repr__(self):
+        return '<Resource object, uid={}, depends={}>'.format(
+            self.uid,
+            self.depends
+        )
 
 
 class JSResource(Resource):
