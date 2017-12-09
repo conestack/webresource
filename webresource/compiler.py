@@ -1,4 +1,3 @@
-from six import StringIO
 from webresource.compat import add_metaclass
 from webresource.resource import resource_registry as rr
 import abc
@@ -55,6 +54,7 @@ class Compiler(object):
         """Compile resource.
 
         :param res: ``webresource.resource.Resource`` instance.
+        :return string: Compiled outcome as atring.
         """
         raise NotImplemented()
 
@@ -65,7 +65,7 @@ class SlimitCompiler(Compiler):
     """
 
     def __init__(self):
-        """Initialize slimit compiler.
+        """Initialize ``slimit`` compiler.
         """
         try:
             import slimit
@@ -76,9 +76,21 @@ class SlimitCompiler(Compiler):
         """Compile resource.
 
         :param res: ``webresource.resource.Resource`` instance.
+        :return string: Compiled outcome as atring.
         """
-        source = 'var foo = \'foo\';'
-        slimit.minify(source, mangle=True, mangle_toplevel=True)
+        mangle = True
+        mangle_toplevel = True
+        opts = res.compile_opts
+        if opts:
+            mangle = opts.get('mangle', mangle)
+            mangle_toplevel = opts.get('mangle_toplevel', mangle_toplevel)
+        with open(res.source_path, 'r') as f:
+            source = f.read()
+        return slimit.minify(
+            source,
+            mangle=mangle,
+            mangle_toplevel=mangle_toplevel
+        )
 
 
 @compiler('lesscpy')
@@ -87,7 +99,7 @@ class LesscpyCompiler(Compiler):
     """
 
     def __init__(self):
-        """Initialize lesscpy compiler.
+        """Initialize ``lesscpy`` compiler.
         """
         try:
             import lesscpy
@@ -98,6 +110,11 @@ class LesscpyCompiler(Compiler):
         """Compile resource.
 
         :param res: ``webresource.resource.Resource`` instance.
+        :return string: Compiled outcome as atring.
         """
-        source = 'a { border-width: 2px * 3; }'
-        lesscpy.compile(StringIO(source), minify=True)
+        minify = True
+        opts = res.compile_opts
+        if opts:
+            minify = opts.get('minify', minify)
+        with open(res.source_path, 'r') as source:
+            return lesscpy.compile(source, minify=minify)
