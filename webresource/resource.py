@@ -12,8 +12,14 @@ class RegistryError(Exception):
 class resource_registry(object):
     """Resource registry singleton.
     """
+
     _js = dict()
+    """Javascript resources registry.
+    """
+
     _css = dict()
+    """CSS resources registry.
+    """
 
     @staticmethod
     def _register(reg, res):
@@ -34,6 +40,7 @@ class resource_registry(object):
         correct order.
 
         :param reg: Registry dict.
+        :return list: Resources sorted by dependency from passed registry dict.
         """
         res = reg.keys()
         cnt = len(res)
@@ -70,6 +77,8 @@ class resource_registry(object):
     def resolve_js(cls):
         """Resolve dependency tree of Javascript resources and return them
         in correct order.
+
+        :return list: Javascript resources sorted by dependency.
         """
         return cls._resolve(cls._js)
 
@@ -87,19 +96,68 @@ class resource_registry(object):
     def resolve_css(cls):
         """Resolve dependency tree of CSS resources and return them
         in correct order.
+
+        :return list: CSS resources sorted by dependency.
         """
         return cls._resolve(cls._css)
+
+
+def js_resource(uid, depends=None, source=None,
+                target=None, compiler=None, prefix='/'):
+    """Register a Javascript resource.
+
+    :param uid: The resource unique identifier.
+    :param depends: Optional uid or list of uids of dependency resource.
+    :param source: Source file for this resource.
+    :param target: Bundling target.
+    :param compiler: Compiler to use.
+    :param prefix: WWW prefix for html tag link creation.
+    """
+    resource_registry.register_js(JSResource(
+        uid,
+        depends=depends,
+        source=source,
+        target=target,
+        compiler=compiler,
+        prefix=prefix
+    ))
+
+
+def css_resource(uid, depends=None, source=None,
+                 target=None, compiler=None, prefix='/'):
+    """Register a CSS resource.
+
+    :param uid: The resource unique identifier.
+    :param depends: Optional uid or list of uids of dependency resource.
+    :param source: Source file for this resource.
+    :param target: Bundling target.
+    :param compiler: Compiler to use.
+    :param prefix: WWW prefix for html tag link creation.
+    """
+    resource_registry.register_css(CSSResource(
+        uid,
+        depends=depends,
+        source=source,
+        target=target,
+        compiler=compiler,
+        prefix=prefix
+    ))
 
 
 class Resource(object):
     """A web resource.
     """
 
-    def __init__(self, uid, depends=None):
+    def __init__(self, uid, depends=None, source=None,
+                 target=None, compiler=None, prefix='/'):
         """Create resource instance.
 
-        :param uid: The resource unique identifier
-        :param depends: Optional uid or list of uids of dependency resource
+        :param uid: The resource unique identifier.
+        :param depends: Optional uid or list of uids of dependency resource.
+        :param source: Source file for this resource.
+        :param target: Bundling target.
+        :param compiler: Compiler to use.
+        :param prefix: WWW prefix for html tag link creation.
         """
         self.uid = uid
         if not depends:
@@ -107,11 +165,23 @@ class Resource(object):
         elif not isinstance(depends, list) and not isinstance(depends, tuple):
             depends = [depends]
         self.depends = depends
+        self.source = source
+        self.target = target
+        self.compiler = compiler
+        self.prefix = prefix
 
     def __repr__(self):
-        return '<Resource object, uid={}, depends={}>'.format(
+        return (
+            '<{} object, uid={}, depends={}, source={}, '
+            'target={}, compiler={}, prefix={}>'
+        ).format(
+            self.__class__.__name__,
             self.uid,
-            self.depends
+            self.depends,
+            self.source,
+            self.target,
+            self.compiler,
+            self.prefix
         )
 
 
