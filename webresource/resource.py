@@ -8,6 +8,11 @@ import os
 logger = logging.getLogger('webresource')
 
 
+class RegistryError(Exception):
+    """Resource registry related exception.
+    """
+
+
 @add_metaclass(abc.ABCMeta)
 class Resource(object):
     """A web resource.
@@ -73,7 +78,11 @@ class Resource(object):
         if not target:
             target = self.source
         if target.startswith('uid:'):
-            return self.registry[target[4:]].target_path
+            res = self.registry.get(target[4:])
+            if not res:
+                msg = 'Dependency resource {} not exists'.format(target[4:])
+                raise RegistryError(msg)
+            return res.target_path
         return os.path.join(self.source_dir, target)
 
 
@@ -97,11 +106,6 @@ class CSSResource(Resource):
         """CSS registry dict.
         """
         return resource_registry.css
-
-
-class RegistryError(Exception):
-    """Resource registry related exception.
-    """
 
 
 class resource_registry(object):

@@ -1,6 +1,6 @@
 from six import StringIO
 from webresource.compat import add_metaclass
-from webresource.resource import resource_registry
+from webresource.resource import resource_registry as rr
 import abc
 import os
 

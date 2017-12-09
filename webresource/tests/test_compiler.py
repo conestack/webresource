@@ -33,7 +33,7 @@ class TestCompiler(BaseTestCase):
             'Can\'t instantiate abstract class Compiler with abstract '
             'methods compile'
         )
-        self.assertRaisesWithMessage(msg, Compiler)
+        self.assertRaisesWithMessage(TypeError, msg, Compiler)
 
         class TestCompiler(Compiler):
             def compile(self, resource):

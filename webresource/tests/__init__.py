@@ -3,11 +3,11 @@ import unittest
 
 class BaseTestCase(unittest.TestCase):
 
-    def assertRaisesWithMessage(self, msg, func, *args, **kwargs):
+    def assertRaisesWithMessage(self, exc, msg, func, *args, **kwargs):
         try:
             func(*args, **kwargs)
             self.assertFail()
-        except Exception as inst:
+        except exc as inst:
             self.assertEqual(inst.message, msg)
 
 
