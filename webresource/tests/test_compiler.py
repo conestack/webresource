@@ -1,5 +1,6 @@
 from webresource.compiler import compiler
 from webresource.compiler import Compiler
+from webresource.compiler import CompilerError
 from webresource.resource import CSSResource
 from webresource.resource import JSResource
 from webresource.tests import BaseTestCase
@@ -23,10 +24,14 @@ class TestCompiler(BaseTestCase):
 
             @compiler('test')
             class TestCompiler(Compiler):
-                pass
+                def compile(self, res):
+                    return 'compiled'
 
-            self.assertEqual(compiler.get('test'), TestCompiler)
-            self.assertEqual(compiler.get('inexistent'), None)
+            self.assertEqual(compiler.get('test').__class__, TestCompiler)
+
+            msg = 'No compiler registered by name inexistent'
+            self.assertRaisesWithMessage(
+                CompilerError, msg, compiler.get, 'inexistent')
 
     def test_Compiler(self):
         msg = (
