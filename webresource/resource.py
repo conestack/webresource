@@ -160,6 +160,7 @@ class resource_registry(object):
                         res[i], res[j] = res[j], res[i]
                         sort()
         sort()
+        # XXX: sort by target
         return [reg[k] for k in res]
 
     @classmethod
