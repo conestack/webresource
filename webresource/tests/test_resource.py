@@ -28,6 +28,7 @@ class TestResource(BaseTestCase):
         self.assertEqual(r.compiler, None)
         self.assertEqual(r.compiler_opts, None)
         self.assertEqual(r.prefix, '/')
+        self.assertEqual(r.skip, False)
 
         r = Resource('uid', depends='foo')
         self.assertEqual(r.depends, ['foo'])
@@ -200,7 +201,7 @@ class TestRegisterFunctions(unittest.TestCase):
 
     def test_js_resource(self):
         with mock.patch.dict(rr.js, {}, clear=True):
-            js_resource(
+            res = js_resource(
                 'app_scripts',
                 depends=None,
                 source='assets/app.js',
@@ -208,20 +209,21 @@ class TestRegisterFunctions(unittest.TestCase):
                 compiler='slimit',
                 prefix='/javascripts/'
             )
-            res = rr.resolve_js()
-            self.assertEqual(len(res), 1)
+            resolved = rr.resolve_js()
+            self.assertEqual(len(resolved), 1)
+            self.assertEqual(resolved[0], res)
             expected = (
                 '<JSResource object, uid=app_scripts, depends=[], '
                 'source=assets/app.js, target=assets/app.min.js, '
                 'compiler=slimit, prefix=/javascripts/>'
             )
-            self.assertEqual(expected, str(res[0]))
+            self.assertEqual(expected, str(resolved[0]))
 
         self.assertEqual(rr.js, {})
 
     def test_css_resource(self):
         with mock.patch.dict(rr.css, {}, clear=True):
-            css_resource(
+            res = css_resource(
                 'app_styles',
                 depends=None,
                 source='assets/app.less',
@@ -229,13 +231,14 @@ class TestRegisterFunctions(unittest.TestCase):
                 compiler='lesscpy',
                 prefix='/stylesheets/'
             )
-            res = rr.resolve_css()
-            self.assertEqual(len(res), 1)
+            resolved = rr.resolve_css()
+            self.assertEqual(len(resolved), 1)
+            self.assertEqual(resolved[0], res)
             expected = (
                 '<CSSResource object, uid=app_styles, depends=[], '
                 'source=assets/app.less, target=assets/app.css, '
                 'compiler=lesscpy, prefix=/stylesheets/>'
             )
-            self.assertEqual(expected, str(res[0]))
+            self.assertEqual(expected, str(resolved[0]))
 
         self.assertEqual(rr.css, {})

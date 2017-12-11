@@ -204,6 +204,7 @@ class LesscpyCompiler(Compiler):
 class WebpackCompiler(Compiler):
     """Compiler utilizing webpack.
     """
+    static_target = 'webpack.config.js'
 
     def compile(self, res):
         """Compile resource to get interpreted by ``webpack``.

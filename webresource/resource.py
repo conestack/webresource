@@ -19,7 +19,8 @@ class Resource(object):
     """
 
     def __init__(self, uid, depends=None, resource_dir=None, source=None,
-                 target=None, compiler=None, compiler_opts=None, prefix='/'):
+                 target=None, compiler=None, compiler_opts=None, prefix='/',
+                 skip=False):
         """Create resource instance.
 
         :param uid: The resource unique identifier.
@@ -33,6 +34,7 @@ class Resource(object):
         :param compiler: Compiler to use.
         :param compiler_opts: Dict containing compiler options.
         :param prefix: Prefix for html tag link creation.
+        :param skip: Flag whether to exclude this resource from processing.
         """
         self.uid = uid
         if not depends:
@@ -46,6 +48,7 @@ class Resource(object):
         self.compiler = compiler
         self.compiler_opts = compiler_opts
         self.prefix = prefix
+        self.skip = skip
 
     def __repr__(self):
         return (
@@ -225,7 +228,7 @@ def js_resource(uid, depends=None, resource_dir=None, source=None,
     if not resource_dir:
         module = inspect.getmodule(inspect.currentframe().f_back)
         resource_dir = os.path.dirname(os.path.abspath(module.__file__))
-    resource_registry.register_js(JSResource(
+    res = JSResource(
         uid,
         depends=depends,
         source=source,
@@ -234,7 +237,9 @@ def js_resource(uid, depends=None, resource_dir=None, source=None,
         compiler=compiler,
         compiler_opts=compiler_opts,
         prefix=prefix
-    ))
+    )
+    resource_registry.register_js(res)
+    return res
 
 
 def css_resource(uid, depends=None, resource_dir=None, source=None,
@@ -257,7 +262,7 @@ def css_resource(uid, depends=None, resource_dir=None, source=None,
     if not resource_dir:
         module = inspect.getmodule(inspect.currentframe().f_back)
         resource_dir = os.path.dirname(os.path.abspath(module.__file__))
-    resource_registry.register_css(CSSResource(
+    res = CSSResource(
         uid,
         depends=depends,
         source=source,
@@ -266,4 +271,6 @@ def css_resource(uid, depends=None, resource_dir=None, source=None,
         compiler=compiler,
         compiler_opts=compiler_opts,
         prefix=prefix
-    ))
+    )
+    resource_registry.register_css(res)
+    return res

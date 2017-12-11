@@ -60,6 +60,20 @@ class TestCompiler(BaseTestCase):
         comp = TestCompiler()
         self.assertEqual(comp.compile(JSResource('A')), 'compiled')
 
+    def test_DefaultCompiler(self):
+        cpl = compiler.get('default')
+        with mock.patch.dict(rr.js, {}, clear=True):
+            with tempdir() as path:
+                js_resource(
+                    'a',
+                    resource_dir=path,
+                    source='a.js'
+                )
+                with open(rr.js['a'].source_path, 'w') as f:
+                    f.write('var foo=1;\nconsole.log(foo);')
+                compiled = cpl.compile(rr.js['a'])
+                self.assertEqual(compiled, 'var foo=1;\nconsole.log(foo);')
+
     def test_SlimitCompiler(self):
         cpl = compiler.get('slimit')
         self.assertTrue(cpl.mangle)
