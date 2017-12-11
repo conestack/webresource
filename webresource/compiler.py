@@ -78,7 +78,7 @@ class Compiler(object):
     """
 
     @abc.abstractmethod
-    def compile(self, res):
+    def compile_resource(self, res):
         """Compile resource.
 
         :param res: ``webresource.resource.Resource`` instance.
@@ -99,7 +99,7 @@ class DefaultCompiler(Compiler):
     """Default compiler.
     """
 
-    def compile(self, res):
+    def compile_resource(self, res):
         """Return contents of source file as is.
 
         :param res: ``webresource.resource.Resource`` instance.
@@ -135,7 +135,7 @@ class SlimitCompiler(Compiler):
         if not SLIMIT_INSTALLED:
             raise CompilerError('``slimit`` not installed')
 
-    def compile(self, res):
+    def compile_resource(self, res):
         """Compile resource using ``slimit``.
 
         :param res: ``webresource.resource.Resource`` instance.
@@ -184,7 +184,7 @@ class LesscpyCompiler(Compiler):
         if not LESSCPY_INSTALLED:
             CompilerError('``lesscpy`` not installed')
 
-    def compile(self, res):
+    def compile_resource(self, res):
         """Compile resource using ``lesscpy``.
 
         :param res: ``webresource.resource.Resource`` instance.
@@ -206,7 +206,7 @@ class WebpackCompiler(Compiler):
     """
     static_target = 'webpack.config.js'
 
-    def compile(self, res):
+    def compile_resource(self, res):
         """Compile resource to get interpreted by ``webpack``.
 
         :param res: ``webresource.resource.Resource`` instance.
@@ -258,7 +258,7 @@ def _compile_resources(resources, development=False, purge=False):
         # lookup or create target file descriptor
         fd = fds.setdefault(target_path, open('w', target_path))
         fd.write('\n\n')
-        fd.write(cpl.compile(res))
+        fd.write(cpl.compile_resource(res))
         # set modification time of source file. this is necessary to detect
         # recompilation of bundles if one resource changed.
         os.utime(source_path, (now, now))

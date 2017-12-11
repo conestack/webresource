@@ -37,7 +37,7 @@ class TestCompiler(BaseTestCase):
 
             @compiler('test')
             class TestCompiler(Compiler):
-                def compile(self, res):
+                def compile_resource(self, res):
                     return 'compiled'
 
             self.assertEqual(compiler.get('test').__class__, TestCompiler)
@@ -49,16 +49,16 @@ class TestCompiler(BaseTestCase):
     def test_Compiler(self):
         msg = (
             'Can\'t instantiate abstract class Compiler with abstract '
-            'methods compile'
+            'methods compile_resource'
         )
         self.assertRaisesWithMessage(TypeError, msg, Compiler)
 
         class TestCompiler(Compiler):
-            def compile(self, resource):
+            def compile_resource(self, resource):
                 return 'compiled'
 
-        comp = TestCompiler()
-        self.assertEqual(comp.compile(JSResource('A')), 'compiled')
+        cpl = TestCompiler()
+        self.assertEqual(cpl.compile_resource(JSResource('A')), 'compiled')
 
     def test_DefaultCompiler(self):
         cpl = compiler.get('default')
@@ -71,7 +71,7 @@ class TestCompiler(BaseTestCase):
                 )
                 with open(rr.js['a'].source_path, 'w') as f:
                     f.write('var foo=1;\nconsole.log(foo);')
-                compiled = cpl.compile(rr.js['a'])
+                compiled = cpl.compile_resource(rr.js['a'])
                 self.assertEqual(compiled, 'var foo=1;\nconsole.log(foo);')
 
     def test_SlimitCompiler(self):
@@ -90,7 +90,7 @@ class TestCompiler(BaseTestCase):
                 )
                 with open(rr.js['a'].source_path, 'w') as f:
                     f.write('var foo=1;\nconsole.log(foo);')
-                compiled = cpl.compile(rr.js['a'])
+                compiled = cpl.compile_resource(rr.js['a'])
                 self.assertEqual(compiled, 'var a=1;console.log(a);')
 
     def test_LesscpyCompiler(self):
@@ -108,5 +108,5 @@ class TestCompiler(BaseTestCase):
                 )
                 with open(rr.css['a'].source_path, 'w') as f:
                     f.write('a { border-width: 2px * 3; }')
-                compiled = cpl.compile(rr.css['a'])
+                compiled = cpl.compile_resource(rr.css['a'])
                 self.assertEqual(compiled, 'a{border-width:6px;}')
