@@ -17,7 +17,7 @@ class ResourceGroup(object):
     """A resource group.
     """
 
-    def __init__(self, uid, skip=False);
+    def __init__(self, uid, skip=False):
         """Create resource group.
 
         :param uid: The resource group unique identifier.
@@ -134,6 +134,10 @@ class resource_registry(object):
     """Resource registry singleton.
     """
 
+    groups = dict()
+    """Resource groups dict.
+    """
+
     js = dict()
     """Javascript resources registry dict.
     """
@@ -155,6 +159,7 @@ class resource_registry(object):
             logger.info(msg)
         reg[res.uid] = res
 
+    # XXX: classmethod
     @staticmethod
     def _resolve(reg):
         """Resolve dependency tree of given registry and return resources in
@@ -163,7 +168,12 @@ class resource_registry(object):
         :param reg: Registry dict.
         :return list: Resources sorted by dependency from passed registry dict.
         """
-        res = reg.keys()
+        def skip(res):
+            group = reg[res].group
+            if group and resource_registry.groups[group].skip:
+                return True
+            return False
+        res = [r for r in reg.keys() if not skip(r)]
         cnt = len(res)
         deps = dict()
         def sort():
@@ -184,6 +194,20 @@ class resource_registry(object):
         sort()
         # XXX: sort by target
         return [reg[k] for k in res]
+
+    @classmethod
+    def register_group(cls, group):
+        """Register resource group.
+
+        :param group: ResourceGroup instance.
+        """
+        groups = cls.groups
+        if group.uid in groups:
+            old_group = groups[group.uid]
+            msg = 'ResourceGroup {} gets overwritten with {}'.format(
+                old_group, group)
+            logger.info(msg)
+        groups[group.uid] = group
 
     @classmethod
     def register_js(cls, res):
@@ -224,6 +248,19 @@ class resource_registry(object):
         return cls._resolve(cls.css)
 
 
+def resource_group(uid, skip=False):
+    """Register a resource group.
+
+    :param uid: Unique identifyer of resource group.
+    :param skip: Flag whether to skip inclusion of resource group related
+        resources.
+    :return object: ResourceGroup instance.
+    """
+    group = ResourceGroup(uid, skip=skip)
+    resource_registry.register_group(group)
+    return group
+
+
 def js_resource(uid, depends=None, resource_dir=None, source=None,
                 target=None, compiler=None, compiler_opts=None, prefix='/'):
     """Register a Javascript resource.
@@ -240,6 +277,7 @@ def js_resource(uid, depends=None, resource_dir=None, source=None,
     :param compiler: Compiler to use.
     :param compiler_opts: Dict containing compiler options.
     :param prefix: Prefix for html tag link creation.
+    :return object: JSResource instance.
     """
     if not resource_dir:
         module = inspect.getmodule(inspect.currentframe().f_back)
@@ -274,6 +312,7 @@ def css_resource(uid, depends=None, resource_dir=None, source=None,
     :param compiler: Compiler to use.
     :param compiler_opts: Dict containing compiler options.
     :param prefix: Prefix for html tag link creation.
+    :return object: CSSResource instance.
     """
     if not resource_dir:
         module = inspect.getmodule(inspect.currentframe().f_back)
