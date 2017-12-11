@@ -73,24 +73,52 @@ class compiler_context(object):
     data = threading.local()
 
     def __enter__(self):
+        """Enter compiler context.
+
+        Creates file descriptors mapping for this compiler run.
+
+        :return object: self
+        """
         self.data.fds = dict()
         return self
 
     def __exit__(self, type, value, traceback):
-        # close open file descriptors
+        """Exit compiler context.
+
+        Closes all open file descriptors and deletes file descritor mapping.
+        """
         for fd in self.data.fds.values():
             fd.close()
         del self.data.fds
 
     @classmethod
-    def get_fd(cls, path):
+    def fd(cls, path):
+        """Get filedescritor by path.
+
+        :param path: Path of requested file descriptor.
+        :return object: File descriptor object related to path.
+        :raise CompilerError: If function gets called outside compiler run.
+        """
         try:
             fd = cls.data.fds.get(path)
             if not fd:
                 fd = cls.data.fds.setdefault(path, open(path, 'w'))
             return fd
         except AttributeError:
-            msg = 'Invalid call to ``get_fd`` outside compiler run'
+            msg = 'Invalid call to ``fd`` outside compiler run'
+            raise CompilerError(msg)
+
+    @classmethod
+    def paths(cls):
+        """Get paths of all open file descriptors.
+
+        :return list: List of paths of open file descriptors.
+        :raise CompilerError: If function gets called outside compiler run.
+        """
+        try:
+            return cls.data.fds.keys()
+        except AttributeError:
+            msg = 'Invalid call to ``paths`` outside compiler run'
             raise CompilerError(msg)
 
 
@@ -110,7 +138,6 @@ class Compiler(object):
         """Compile resource.
 
         :param res: ``webresource.resource.Resource`` instance.
-        :return string: Compiled outcome as string.
         """
         raise NotImplemented()
 
@@ -128,13 +155,16 @@ class DefaultCompiler(Compiler):
     """
 
     def compile_resource(self, res):
-        """Return contents of source file as is.
+        """If target differs from source, contents of source file is written
+        to target, otherwise compiler does nothing.
 
         :param res: ``webresource.resource.Resource`` instance.
-        :return string: Compiled outcome as string.
         """
-        with open(res.source_path, 'r') as f:
-            return f.read()
+        if res.source_path == res.target_path:
+            return
+        with open(res.source_path, 'r') as src:
+            tgt = compiler_context.fd(res.target_path)
+            tgt.write(src.read())
 
 
 try:
@@ -149,11 +179,11 @@ class SlimitCompiler(Compiler):
     """Compiler utilizing ``slimit``.
     """
 
-    mangle = True
+    mangle = False
     """Compile option whether to mangle in compiled output.
     """
 
-    mangle_toplevel = True
+    mangle_toplevel = False
     """Compile option whether to mangle toplevel in compiled output.
     """
 
@@ -167,10 +197,12 @@ class SlimitCompiler(Compiler):
         """Compile resource using ``slimit``.
 
         :param res: ``webresource.resource.Resource`` instance.
-        :return string: Compiled outcome as string.
         """
         if not isinstance(res, JSResource):
             raise ValueError('{} is no ``JSResource`` instance'.format(res))
+        if res.source_path == res.target_path:
+            msg = 'Compilation target must differ from source to avoid override'
+            raise CompilerError(msg)
         mangle = self.mangle
         mangle_toplevel = self.mangle_toplevel
         opts = res.compiler_opts
@@ -178,12 +210,13 @@ class SlimitCompiler(Compiler):
             mangle = opts.get('mangle', mangle)
             mangle_toplevel = opts.get('mangle_toplevel', mangle_toplevel)
         with open(res.source_path, 'r') as f:
-            source = f.read()
-        return slimit.minify(
-            source,
-            mangle=mangle,
-            mangle_toplevel=mangle_toplevel
-        )
+            src = slimit.minify(
+                f.read(),
+                mangle=mangle,
+                mangle_toplevel=mangle_toplevel
+            )
+            tgt = compiler_context.fd(res.target_path)
+            tgt.write(src)
 
 
 try:
@@ -216,16 +249,20 @@ class LesscpyCompiler(Compiler):
         """Compile resource using ``lesscpy``.
 
         :param res: ``webresource.resource.Resource`` instance.
-        :return string: Compiled outcome as string.
         """
         if not isinstance(res, CSSResource):
             raise ValueError('{} is no ``CSSResource`` instance'.format(res))
+        if res.source_path == res.target_path:
+            msg = 'Compilation target must differ from source to avoid override'
+            raise CompilerError(msg)
         minify = self.minify
         opts = res.compiler_opts
         if opts:
             minify = opts.get('minify', minify)
-        with open(res.source_path, 'r') as source:
-            return lesscpy.compile(source, minify=minify)
+        with open(res.source_path, 'r') as f:
+            src = lesscpy.compile(f, minify=minify)
+            tgt = compiler_context.fd(res.target_path)
+            tgt.write(src)
 
 
 @compiler('webpack')
@@ -238,7 +275,6 @@ class WebpackCompiler(Compiler):
         """Compile resource to get interpreted by ``webpack``.
 
         :param res: ``webresource.resource.Resource`` instance.
-        :return string: Compiled outcome as string.
         """
         # XXX
 
@@ -249,20 +285,17 @@ class WebpackCompiler(Compiler):
         # XXX
 
 
-def _compile_resources(resources, development=False, purge=False):
+def _compile_resources(resources, timestamp, development=False, purge=False):
     """Compile resources.
 
     XXX: check compilation target against dependencies
     XXX: non compiled resources also must be added to target
 
     :param resources: List of resources to compile in correct dependency order.
+    :param timestamp: modification timestamp.
     :param development: Flag whether development mode.
     :param purge: Flag whether to purge already compiled resource.
     """
-    # container for file descriptors
-    fds = dict()
-    # timestamp for setting modification time
-    now = time.time()
     # iterate resources
     for res in resources:
         # source path must differ from target path if dedicated compiler defined
@@ -289,13 +322,7 @@ def _compile_resources(resources, development=False, purge=False):
         fd.write(cpl.compile_resource(res))
         # set modification time of source file. this is necessary to detect
         # recompilation of bundles if one resource changed.
-        os.utime(source_path, (now, now))
-    # close open file descriptors
-    for fd in fds.values():
-        fd.close()
-    # write modification time for all touched target files.
-    for path in fds.keys():
-        os.utime(path, (now, now))
+        os.utime(source_path, (timestamp, timestamp))
 
 
 def compile(development=False, purge=False):
@@ -304,11 +331,26 @@ def compile(development=False, purge=False):
     :param development: Flag whether development mode.
     :param purge: Flag whether to purge already compiled resource.
     """
-    with compiler_context():
+    with compiler_context() as cc:
+        # timestamp for setting modification time
+        timestamp = time.time()
         # compile CSS resources
-        _compile_resources(rr.resolve_css, development=development, purge=purge)
+        _compile_resources(
+            rr.resolve_css,
+            timestamp,
+            development=development,
+            purge=purge
+        )
         # compile JS resources
-        _compile_resources(rr.resolve_js, development=development, purge=purge)
-        # call ``post_compile`` on all instanciated compilers
+        _compile_resources(
+            rr.resolve_js,
+            timestamp,
+            development=development,
+            purge=purge
+        )
+        # call ``post_compile`` on all instanciated compilers.
         for cpl in compiler.all():
             cpl.post_compile()
+        # write modification time for all touched target files.
+        for path in cc.paths():
+            os.utime(path, (timestamp, timestamp))
