@@ -4,6 +4,7 @@ from webresource.resource import JSResource
 from webresource.resource import resource_registry as rr
 import abc
 import os
+import threading
 import time
 
 
@@ -64,6 +65,33 @@ class compiler(object):
 class CompilerError(Exception):
     """Compiler related exception.
     """
+
+
+class compiler_context(object):
+    """Compiler context for a single compiler run.
+    """
+    data = threading.local()
+
+    def __enter__(self):
+        self.data.fds = dict()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        # close open file descriptors
+        for fd in self.data.fds.values():
+            fd.close()
+        del self.data.fds
+
+    @classmethod
+    def get_fd(cls, path):
+        try:
+            fd = cls.data.fds.get(path)
+            if not fd:
+                fd = cls.data.fds.setdefault(path, open(path, 'w'))
+            return fd
+        except AttributeError:
+            msg = 'Invalid call to ``get_fd`` outside compiler run'
+            raise CompilerError(msg)
 
 
 @add_metaclass(abc.ABCMeta)
@@ -276,10 +304,11 @@ def compile(development=False, purge=False):
     :param development: Flag whether development mode.
     :param purge: Flag whether to purge already compiled resource.
     """
-    # compile CSS resources
-    _compile_resources(rr.resolve_css, development=development, purge=purge)
-    # compile JS resources
-    _compile_resources(rr.resolve_js, development=development, purge=purge)
-    # call ``post_compile`` on all instanciated compilers
-    for cpl in compiler.all():
-        cpl.post_compile()
+    with compiler_context():
+        # compile CSS resources
+        _compile_resources(rr.resolve_css, development=development, purge=purge)
+        # compile JS resources
+        _compile_resources(rr.resolve_js, development=development, purge=purge)
+        # call ``post_compile`` on all instanciated compilers
+        for cpl in compiler.all():
+            cpl.post_compile()

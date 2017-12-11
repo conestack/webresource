@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from webresource.compiler import compiler
+from webresource.compiler import compiler_context
 from webresource.compiler import Compiler
 from webresource.compiler import CompilerError
 from webresource.resource import CSSResource
@@ -9,6 +10,7 @@ from webresource.resource import js_resource
 from webresource.resource import resource_registry as rr
 from webresource.tests import BaseTestCase
 import mock
+import os
 import shutil
 import tempfile
 
@@ -45,6 +47,31 @@ class TestCompiler(BaseTestCase):
             msg = 'No compiler registered by name inexistent'
             self.assertRaisesWithMessage(
                 CompilerError, msg, compiler.get, 'inexistent')
+
+    def test_compiler_context(self):
+        msg = 'Invalid call to ``get_fd`` outside compiler run'
+        self.assertRaisesWithMessage(
+            CompilerError, msg, compiler_context.get_fd, '/path')
+
+        with tempdir() as dirpath:
+            path = os.path.join(dirpath, 'resource')
+            with compiler_context() as cc:
+                fd = cc.get_fd(path)
+
+                self.assertTrue(fd is cc.get_fd(path))
+                self.assertTrue(fd is compiler_context.get_fd(path))
+                self.assertEqual({path: fd}, cc.data.fds)
+
+        msg = "'thread._local' object has no attribute 'fds'"
+        self.assertRaisesWithMessage(
+            AttributeError, msg, lambda: compiler_context.data.fds)
+
+        msg = 'Invalid call to ``get_fd`` outside compiler run'
+        self.assertRaisesWithMessage(
+            CompilerError, msg, compiler_context.get_fd, '/path')
+
+        msg = 'I/O operation on closed file'
+        self.assertRaisesWithMessage(ValueError, msg, fd.write, '')
 
     def test_Compiler(self):
         msg = (
