@@ -18,15 +18,18 @@ class Resource(object):
     """A web resource.
     """
 
-    def __init__(self, uid, depends=None, source=None, source_dir=None,
+    def __init__(self, uid, depends=None, resource_dir=None, source=None,
                  target=None, compiler=None, compiler_opts=None, prefix='/'):
         """Create resource instance.
 
         :param uid: The resource unique identifier.
         :param depends: Optional uid or list of uids of dependency resource.
+        :param resource_dir: Directory containing the resource files.
         :param source: Source file for this resource.
-        :param source_dir: Directory containing the source files.
-        :param target: Bundling target.
+        :param target: Bundling target. Either file name or dependency resource
+            if value starts with ``uid:``. If development mode, compilation
+            required and dependency resource defined as target, the compiled
+            resource gets placed in the resource directory.
         :param compiler: Compiler to use.
         :param compiler_opts: Dict containing compiler options.
         :param prefix: Prefix for html tag link creation.
@@ -37,8 +40,8 @@ class Resource(object):
         elif not isinstance(depends, list) and not isinstance(depends, tuple):
             depends = [depends]
         self.depends = depends
+        self.resource_dir = resource_dir
         self.source = source
-        self.source_dir = source_dir
         self.target = target
         self.compiler = compiler
         self.compiler_opts = compiler_opts
@@ -68,7 +71,7 @@ class Resource(object):
     def source_path(self):
         """Absolute path to resource source.
         """
-        return os.path.join(self.source_dir, self.source)
+        return os.path.join(self.resource_dir, self.source)
 
     @property
     def target_path(self):
@@ -83,7 +86,7 @@ class Resource(object):
                 msg = 'Dependency resource {} not exists'.format(target[4:])
                 raise RegistryError(msg)
             return res.target_path
-        return os.path.join(self.source_dir, target)
+        return os.path.join(self.resource_dir, target)
 
 
 class JSResource(Resource):
@@ -202,26 +205,31 @@ class resource_registry(object):
         return cls._resolve(cls.css)
 
 
-def js_resource(uid, depends=None, source=None, source_dir=None, target=None,
-                compiler=None, compiler_opts=None, prefix='/'):
+def js_resource(uid, depends=None, resource_dir=None, source=None,
+                target=None, compiler=None, compiler_opts=None, prefix='/'):
     """Register a Javascript resource.
 
     :param uid: The resource unique identifier.
     :param depends: Optional uid or list of uids of dependency resource.
+    :param resource_dir: Directory containing the resource files. If not given,
+        resource directory gets calculated from calling package.
     :param source: Source file for this resource.
-    :param target: Bundling target.
+    :param target: Bundling target. Either file name or dependency resource
+        if value starts with ``uid:``. If development mode, compilation
+        required and dependency resource defined as target, the compiled
+        resource gets placed in the resource directory.
     :param compiler: Compiler to use.
     :param compiler_opts: Dict containing compiler options.
     :param prefix: Prefix for html tag link creation.
     """
-    if not source_dir:
+    if not resource_dir:
         module = inspect.getmodule(inspect.currentframe().f_back)
-        source_dir = os.path.dirname(os.path.abspath(module.__file__))
+        resource_dir = os.path.dirname(os.path.abspath(module.__file__))
     resource_registry.register_js(JSResource(
         uid,
         depends=depends,
         source=source,
-        source_dir=source_dir,
+        resource_dir=resource_dir,
         target=target,
         compiler=compiler,
         compiler_opts=compiler_opts,
@@ -229,26 +237,31 @@ def js_resource(uid, depends=None, source=None, source_dir=None, target=None,
     ))
 
 
-def css_resource(uid, depends=None, source=None, source_dir=None, target=None,
-                 compiler=None, compiler_opts=None, prefix='/'):
+def css_resource(uid, depends=None, resource_dir=None, source=None,
+                 target=None, compiler=None, compiler_opts=None, prefix='/'):
     """Register a CSS resource.
 
     :param uid: The resource unique identifier.
     :param depends: Optional uid or list of uids of dependency resource.
+    :param resource_dir: Directory containing the resource files. If not given,
+        resource directory gets calculated from calling package.
     :param source: Source file for this resource.
-    :param target: Bundling target.
+    :param target: Bundling target. Either file name or dependency resource
+        if value starts with ``uid:``. If development mode, compilation
+        required and dependency resource defined as target, the compiled
+        resource gets placed in the resource directory.
     :param compiler: Compiler to use.
     :param compiler_opts: Dict containing compiler options.
     :param prefix: Prefix for html tag link creation.
     """
-    if not source_dir:
+    if not resource_dir:
         module = inspect.getmodule(inspect.currentframe().f_back)
-        source_dir = os.path.dirname(os.path.abspath(module.__file__))
+        resource_dir = os.path.dirname(os.path.abspath(module.__file__))
     resource_registry.register_css(CSSResource(
         uid,
         depends=depends,
         source=source,
-        source_dir=source_dir,
+        resource_dir=resource_dir,
         target=target,
         compiler=compiler,
         compiler_opts=compiler_opts,

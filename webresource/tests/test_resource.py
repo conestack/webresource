@@ -22,8 +22,8 @@ class TestResource(BaseTestCase):
         r = Resource('uid')
         self.assertEqual(r.uid, 'uid')
         self.assertEqual(r.depends, [])
+        self.assertEqual(r.resource_dir, None)
         self.assertEqual(r.source, None)
-        self.assertEqual(r.source_dir, None)
         self.assertEqual(r.target, None)
         self.assertEqual(r.compiler, None)
         self.assertEqual(r.compiler_opts, None)
@@ -43,15 +43,15 @@ class TestResource(BaseTestCase):
         self.assertEqual(r.registry, {})
 
     def test_source_path(self):
-        r = Resource('uid', source='assets/resource', source_dir='/some/path')
+        r = Resource('uid', resource_dir='/some/path', source='assets/resource')
         self.assertEqual(r.source_path, '/some/path/assets/resource')
 
     def test_target_path(self):
         # no target defined, target_path is source_path
-        r = Resource('uid', source='assets/resource', source_dir='/some/path')
+        r = Resource('uid', resource_dir='/some/path', source='assets/resource')
         self.assertEqual(r.target_path, '/some/path/assets/resource')
 
-        # target defined, as base for target source_dir is used
+        # target defined, as base for target resource_dir is used
         r.target = 'assets/resource.compiled'
         self.assertEqual(r.target_path, '/some/path/assets/resource.compiled')
 
@@ -59,10 +59,9 @@ class TestResource(BaseTestCase):
         with mock.patch.dict(Resource.registry, {}, clear=True):
             reg = Resource.registry
             a = reg['A'] = Resource(
-                'A', source='a', source_dir='/path', target='a.compiled')
+                'A', resource_dir='/path', source='a', target='a.compiled')
             b = reg['B'] = Resource(
-                'B', depends='A', source='b', source_dir='/path',
-                target='uid:A')
+                'B', depends='A', resource_dir='/path', source='b', target='uid:A')
             self.assertEqual(b.target_path, '/path/a.compiled')
 
             b.target = 'uid:a'

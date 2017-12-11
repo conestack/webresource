@@ -69,8 +69,8 @@ class TestCompiler(BaseTestCase):
             with tempdir() as path:
                 js_resource(
                     'a',
+                    resource_dir=path,
                     source='a.js',
-                    source_dir=path,
                     target='a.js.min',
                     compiler='slimit'
                 )
@@ -87,8 +87,8 @@ class TestCompiler(BaseTestCase):
             with tempdir() as path:
                 css_resource(
                     'a',
+                    resource_dir=path,
                     source='a.less',
-                    source_dir=path,
                     target='a.css',
                     compiler='lesscpy'
                 )
