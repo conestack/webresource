@@ -28,7 +28,7 @@ class TestResource(BaseTestCase):
         self.assertEqual(r.compiler, None)
         self.assertEqual(r.compiler_opts, None)
         self.assertEqual(r.prefix, '/')
-        self.assertEqual(r.skip, False)
+        self.assertEqual(r.group, None)
 
         r = Resource('uid', depends='foo')
         self.assertEqual(r.depends, ['foo'])

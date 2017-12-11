@@ -13,6 +13,21 @@ class RegistryError(Exception):
     """
 
 
+class ResourceGroup(object):
+    """A resource group.
+    """
+
+    def __init__(self, uid, skip=False);
+        """Create resource group.
+
+        :param uid: The resource group unique identifier.
+        :param skip: Flag whether to exclude this resource group from
+            processing.
+        """
+        self.uid = uid
+        self.skip = skip
+
+
 @add_metaclass(abc.ABCMeta)
 class Resource(object):
     """A web resource.
@@ -20,7 +35,7 @@ class Resource(object):
 
     def __init__(self, uid, depends=None, resource_dir=None, source=None,
                  target=None, compiler=None, compiler_opts=None, prefix='/',
-                 skip=False):
+                 group=None):
         """Create resource instance.
 
         :param uid: The resource unique identifier.
@@ -34,7 +49,8 @@ class Resource(object):
         :param compiler: Compiler to use.
         :param compiler_opts: Dict containing compiler options.
         :param prefix: Prefix for html tag link creation.
-        :param skip: Flag whether to exclude this resource from processing.
+        :param group: Resource group uid if this resource belongs to a resource
+            group.
         """
         self.uid = uid
         if not depends:
@@ -48,7 +64,7 @@ class Resource(object):
         self.compiler = compiler
         self.compiler_opts = compiler_opts
         self.prefix = prefix
-        self.skip = skip
+        self.group = group
 
     def __repr__(self):
         return (
