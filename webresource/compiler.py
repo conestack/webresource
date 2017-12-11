@@ -326,7 +326,7 @@ def _compile_resources(resources, timestamp, development=False, purge=False):
         os.utime(source_path, (timestamp, timestamp))
 
 
-def compile(development=False, purge=False):
+def compile_resources(development=False, purge=False):
     """Compile resources according to registered resource definitions.
 
     :param development: Flag whether development mode.

@@ -248,6 +248,17 @@ class resource_registry(object):
         return cls._resolve(cls.css)
 
 
+def resource_directories(development=False):
+    """Return resources related resource directories.
+
+    This function is supposed to collect all directories containing resources
+    which needs to be delivered to the browser along with the corresponding
+    URL prefixes. The framework integration code is then responsible to make
+    these resource directories available via browser under the related prefix.
+    """
+    # XXX
+
+
 def resource_group(uid, skip=False):
     """Register a resource group.
 
