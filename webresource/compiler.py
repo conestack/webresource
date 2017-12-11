@@ -131,6 +131,7 @@ class Compiler(object):
 
     compile_required = False
     """Flag whether compilation is required even in development mode.
+    XXX: probably not needed at all
     """
 
     @abc.abstractmethod
