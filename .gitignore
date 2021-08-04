@@ -3,6 +3,8 @@
 /bin/
 /include/
 /lib/
+/lib64
 /local/
+/pyvenv.cfg
 /share/
 /webresource.egg-info/

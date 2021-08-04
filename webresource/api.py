@@ -11,9 +11,9 @@ class Config(object):
     """Config singleton for web resources.
     """
 
-    def __init__(self):
+    def __init__(self, _merge_dir=None):
         self.debug = False
-        self._merge_dir = None
+        self._merge_dir = _merge_dir
 
     @property
     def merge_dir(self):
@@ -35,7 +35,7 @@ class Resource(object):
 
     def __init__(self, name, depends=None, directory=None, path='/',
                  resource=None, compressed=None, mergeable=False,
-                 include=True, group=None, _congig=config)
+                 include=True, group=None, _config=config):
         """Create resource.
 
         :param name: The resource unique name.
@@ -53,7 +53,7 @@ class Resource(object):
         self.name = name
         if not depends:
             depends = []
-        elif not isinstance(depends, [list, tuple]):
+        elif not isinstance(depends, (list, tuple)):
             depends = [depends]
         self.depends = depends
         if not directory:
@@ -61,6 +61,8 @@ class Resource(object):
             directory = os.path.dirname(os.path.abspath(module.__file__))
         self.directory = directory
         self.path = path
+        if resource is None:
+            raise ValueError('No resource given')
         self.resource = resource
         self.compressed = compressed
         if group:
@@ -73,7 +75,7 @@ class Resource(object):
     def file_path(self):
         """Absolute resource file path depending on operation mode.
         """
-        if self._config.debug and self.compressed:
+        if not self._config.debug and self.compressed:
             file = self.compressed
         else:
             file = self.resource
@@ -127,7 +129,7 @@ class ResourceGroup(object):
 
         :param member: Either ``ResourceGroup`` or ``Resource`` instance.
         """
-        if not isinstance(member, [ResourceGroup, Resource]):
+        if not isinstance(member, (ResourceGroup, Resource)):
             raise ValueError(
                 'Resource group can only contain instances '
                 'of ``ResourceGroup`` or ``Resource``'
@@ -145,21 +147,22 @@ class Resolver(object):
     """Resource resolver.
     """
 
-    def __init__(self, members):
+    def __init__(self, members, _config=config):
         """Create resource resolver.
 
         :param members: Either single or list of ``Resource`` or
         ``ResourceGroup`` instances.
         """
-        if not isinstance(members, [list, tuple]):
+        if not isinstance(members, (list, tuple)):
             members = [members]
         for member in members:
-            if not isinstance(member, [Resource, ResourceGroup]):
+            if not isinstance(member, (Resource, ResourceGroup)):
                 raise ValueError(
                     'members can only contain instances '
                     'of ``ResourceGroup`` or ``Resource``'
                 )
         self.members = members
+        self._config = _config
 
     def _flat_resource(self, members=None):
         if members is None:
