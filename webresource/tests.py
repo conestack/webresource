@@ -32,7 +32,7 @@ class TestWebresource(unittest.TestCase):
         resource = Resource('resource', resource='res.ext')
 
         self.assertEqual(resource.name, 'resource')
-        self.assertEqual(resource.depends, [])
+        self.assertEqual(resource.depends, '')
         self.assertTrue(resource.directory.endswith('/webresource'))
         self.assertEqual(resource.path, '/')
         self.assertEqual(resource.resource, 'res.ext')
@@ -42,7 +42,7 @@ class TestWebresource(unittest.TestCase):
         self.assertTrue(resource._config is wr.config)
         self.assertEqual(
             repr(resource),
-            '<Resource name="resource", depends=[], path="/" mergeable=False>'
+            '<Resource name="resource", depends="", path="/" mergeable=False>'
         )
 
         def include():
@@ -50,12 +50,6 @@ class TestWebresource(unittest.TestCase):
 
         resource = Resource('resource', resource='res.ext', include=include)
         self.assertFalse(resource.include)
-
-        resource = Resource('resource', resource='res.ext', depends='other')
-        self.assertEqual(resource.depends, ['other'])
-
-        resource = Resource('resource', resource='res.ext', depends=['a', 'b'])
-        self.assertEqual(resource.depends, ['a', 'b'])
 
         config = ResourceConfig()
         resource = Resource(
@@ -81,7 +75,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(js._type, 'js')
         self.assertEqual(
             repr(js),
-            '<JSResource name="js_res", depends=[], path="/" mergeable=False>'
+            '<JSResource name="js_res", depends="", path="/" mergeable=False>'
         )
 
     def test_CSSResource(self):
@@ -89,7 +83,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(css._type, 'css')
         self.assertEqual(
             repr(css),
-            '<CSSResource name="css_res", depends=[], path="/" mergeable=False>'
+            '<CSSResource name="css_res", depends="", path="/" mergeable=False>'
         )
 
     def test_ResourceGroup(self):
@@ -117,7 +111,15 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceConflictError(counter)
         self.assertEqual(str(err), 'Conflicting resource names: [\'b\', \'c\']')
 
-    def test_ResourceResolver(self):
+    def test_ResourceCircularDependencyError(self):
+        resource = Resource('name1', resource='res1.ext', depends='name2')
+        err = wr.ResourceCircularDependencyError([resource])
+        self.assertEqual(str(err),
+            'Resources define circular dependencies: '
+            '[<Resource name="name1", depends="name2", path="/" mergeable=False>]'
+        )
+
+    def test_ResourceResolver__flat_resources(self):
         self.assertRaises(ValueError, wr.ResourceResolver, object())
 
         res1 = Resource('res1', resource='res1.ext')
@@ -151,6 +153,28 @@ class TestWebresource(unittest.TestCase):
         res3._include = True
         group3._include = False
         self.assertEqual(resolver._flat_resources(), [res1])
+
+    def test_ResourceResolver_resolve(self):
+        resolver = wr.ResourceResolver([
+            Resource('res', resource='res.ext'),
+            Resource('res', resource='res.ext')
+        ])
+        self.assertRaises(wr.ResourceConflictError, resolver.resolve)
+
+        res1 = Resource('res1', resource='res1.ext', depends='res2')
+        res2 = Resource('res2', resource='res2.ext', depends='res3')
+        res3 = Resource('res3', resource='res3.ext')
+        resolver = wr.ResourceResolver([res1, res2, res3])
+        self.assertEqual(resolver.resolve(), [res3, res2, res1])
+        resolver = wr.ResourceResolver([res2, res1, res3])
+        self.assertEqual(resolver.resolve(), [res3, res2, res1])
+        resolver = wr.ResourceResolver([res1, res3, res2])
+        self.assertEqual(resolver.resolve(), [res3, res2, res1])
+
+        res1 = Resource('res1', resource='res1.ext', depends='res2')
+        res2 = Resource('res2', resource='res2.ext', depends='res1')
+        resolver = wr.ResourceResolver([res1, res2])
+        self.assertRaises(wr.ResourceCircularDependencyError, resolver.resolve)
 
 
 if __name__ == '__main__':

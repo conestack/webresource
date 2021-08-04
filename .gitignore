@@ -1,6 +1,8 @@
 *.pyc
+/.coverage
 /.vscode/
 /bin/
+/htmlcov/
 /include/
 /lib/
 /lib64

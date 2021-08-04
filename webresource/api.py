@@ -48,13 +48,13 @@ class Resource(ResourceMixin):
     """A web resource.
     """
 
-    def __init__(self, name, depends=None, directory=None, path='/',
+    def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, mergeable=False,
                  include=True, group=None, _config=config):
         """Create resource.
 
         :param name: The resource unique name.
-        :param depends: Optional name or list of names of dependency resource.
+        :param depends: Optional name of dependency resource.
         :param directory: Directory containing the resource files.
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
@@ -67,10 +67,6 @@ class Resource(ResourceMixin):
         """
         super(Resource, self).__init__(include)
         self.name = name
-        if not depends:
-            depends = []
-        elif not isinstance(depends, (list, tuple)):
-            depends = [depends]
         self.depends = depends
         if not directory:
             module = inspect.getmodule(inspect.currentframe().f_back)
@@ -98,11 +94,11 @@ class Resource(ResourceMixin):
 
     def __repr__(self):
         return (
-            '<{} name="{}", depends=[{}], path="{}" mergeable={}>'
+            '<{} name="{}", depends="{}", path="{}" mergeable={}>'
         ).format(
             self.__class__.__name__,
             self.name,
-            ','.join(self.depends),
+            self.depends,
             self.path,
             self.mergeable
         )
@@ -158,7 +154,7 @@ class ResourceGroup(ResourceMixin):
         )
 
 
-class ResourceConflictError(Exception):
+class ResourceConflictError(ValueError):
 
     def __init__(self, counter):
         conflicting = list()
@@ -167,6 +163,13 @@ class ResourceConflictError(Exception):
                 conflicting.append(name)
         msg = 'Conflicting resource names: {}'.format(conflicting)
         super(ResourceConflictError, self).__init__(msg)
+
+
+class ResourceCircularDependencyError(ValueError):
+
+    def __init__(self, resources):
+        msg = 'Resources define circular dependencies: {}'.format(resources)
+        super(ResourceCircularDependencyError, self).__init__(msg)
 
 
 class ResourceResolver(object):
@@ -192,7 +195,7 @@ class ResourceResolver(object):
     def _flat_resources(self, members=None):
         if members is None:
             members = self.members
-        resources = list()
+        resources = []
         for member in members:
             if not member.include:
                 continue
@@ -202,22 +205,34 @@ class ResourceResolver(object):
                 resources.append(member)
         return resources
 
-    def _resolve(self):
+    def resolve(self):
         resources = self._flat_resources()
-        counter = Counter(resources)
+        counter = Counter([res.name for res in resources])
         if len(resources) != len(counter):
             raise ResourceConflictError(counter)
-        names = [resource.name for resource in resources]
-        def cmp(a, b):
-            if a.depends is None:
-                return 0
-            if a.depends not in names:
-                msg = 'Undefined dependencs "{}" defined in "{}"'.format(
-                    a.depends,
-                    a.name
-                )
-                raise ValueError(msg)
-            if a.depends == b.depends:
-                return 1
-            return -1
-        return sorted(resources, cmp=cmp)
+        ret = []
+        handled = {}
+        for resource in resources[:]:
+            if not resource.depends:
+                ret.append(resource)
+                handled[resource.name] = resource
+                resources.remove(resource)
+        count = len(resources)
+        while count > 0:
+            count -= 1
+            for resource in resources[:]:
+                #if not handled:
+                #    ret.append(resource)
+                #    handled[resource.name] = resource
+                #    resources.remove(resource)
+                #    break
+                if resource.depends in handled:
+                    dependency = handled[resource.depends]
+                    index = ret.index(dependency)
+                    ret.insert(index + 1, resource)
+                    handled[resource.name] = resource
+                    resources.remove(resource)
+                    break
+        if resources:
+            raise ResourceCircularDependencyError(resources)
+        return ret

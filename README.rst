@@ -1,7 +1,7 @@
 webresource
 ===========
 
-Deliver web resources in your Web Application.
+A resource registry for you Web Application.
 
 
 Features
