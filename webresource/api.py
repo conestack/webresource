@@ -87,7 +87,7 @@ class Resource(object):
         ).format(
             self.__class__.__name__,
             self.name,
-            self.depends,
+            ','.join(self.depends),
             self.path,
             self.mergeable
         )
