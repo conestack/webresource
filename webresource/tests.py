@@ -1,4 +1,5 @@
-from webresource.api import Config
+from collections import Counter
+from webresource.api import ResourceConfig
 from webresource.api import Resource
 import shutil
 import unittest
@@ -7,8 +8,8 @@ import webresource as wr
 
 class TestWebresource(unittest.TestCase):
 
-    def test_Config(self):
-        config = Config()
+    def test_ResourceConfig(self):
+        config = ResourceConfig()
 
         self.assertFalse(config.debug)
         config.debug = True
@@ -23,7 +24,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(config._merge_dir, '/tmp/foo')
         self.assertEqual(config.merge_dir, '/tmp/foo')
 
-        self.assertIsInstance(wr.config, Config)
+        self.assertIsInstance(wr.config, ResourceConfig)
 
     def test_Resource(self):
         self.assertRaises(ValueError, Resource, 'resource')
@@ -39,11 +40,16 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.mergeable, False)
         self.assertEqual(resource.include, True)
         self.assertTrue(resource._config is wr.config)
-
         self.assertEqual(
             repr(resource),
             '<Resource name="resource", depends=[], path="/" mergeable=False>'
         )
+
+        def include():
+            return False
+
+        resource = Resource('resource', resource='res.ext', include=include)
+        self.assertFalse(resource.include)
 
         resource = Resource('resource', resource='res.ext', depends='other')
         self.assertEqual(resource.depends, ['other'])
@@ -51,7 +57,7 @@ class TestWebresource(unittest.TestCase):
         resource = Resource('resource', resource='res.ext', depends=['a', 'b'])
         self.assertEqual(resource.depends, ['a', 'b'])
 
-        config = Config()
+        config = ResourceConfig()
         resource = Resource(
             'resource',
             directory='/dir',
@@ -70,11 +76,81 @@ class TestWebresource(unittest.TestCase):
         resource = Resource('resource', resource='res.ext', group=group)
         self.assertTrue(group.members[0] is resource)
 
-        js = wr.JSResource('js_resource', resource='res.js')
+    def test_JSResource(self):
+        js = wr.JSResource('js_res', resource='res.js')
         self.assertEqual(js._type, 'js')
+        self.assertEqual(
+            repr(js),
+            '<JSResource name="js_res", depends=[], path="/" mergeable=False>'
+        )
 
-        css = wr.CSSResource('css_resource', resource='res.css')
+    def test_CSSResource(self):
+        css = wr.CSSResource('css_res', resource='res.css')
         self.assertEqual(css._type, 'css')
+        self.assertEqual(
+            repr(css),
+            '<CSSResource name="css_res", depends=[], path="/" mergeable=False>'
+        )
+
+    def test_ResourceGroup(self):
+        group = wr.ResourceGroup('groupname')
+        self.assertEqual(group.name, 'groupname')
+        self.assertEqual(group.members, [])
+        self.assertEqual(group.include, True)
+        self.assertEqual(repr(group), '<ResourceGroup name="groupname">')
+
+        def include():
+            return False
+
+        group = wr.ResourceGroup('groupname', include=include)
+        self.assertFalse(group.include)
+
+        res = wr.JSResource('name', resource='name.js')
+        group.add(res)
+        other = wr.ResourceGroup('other')
+        group.add(other)
+        self.assertEqual(group.members, [res, other])
+        self.assertRaises(ValueError, group.add, object())
+
+    def test_ResourceConflictError(self):
+        counter = Counter(['a', 'b', 'b', 'c', 'c'])
+        err = wr.ResourceConflictError(counter)
+        self.assertEqual(str(err), 'Conflicting resource names: [\'b\', \'c\']')
+
+    def test_ResourceResolver(self):
+        self.assertRaises(ValueError, wr.ResourceResolver, object())
+
+        res1 = Resource('res1', resource='res1.ext')
+        resolver = wr.ResourceResolver(res1)
+        self.assertEqual(resolver.members, [res1])
+        self.assertEqual(resolver._flat_resources(), [res1])
+
+        res2 = Resource('res2', resource='res2.ext')
+        resolver = wr.ResourceResolver([res1, res2])
+        self.assertEqual(resolver.members, [res1, res2])
+        self.assertEqual(resolver._flat_resources(), [res1, res2])
+
+        res3 = Resource('res3', resource='res3.ext')
+
+        group1 = wr.ResourceGroup('group1')
+        group1.add(res1)
+
+        group2 = wr.ResourceGroup('group2')
+        group2.add(res2)
+
+        group3 = wr.ResourceGroup('group3')
+        group3.add(res3)
+        group3.add(group2)
+
+        resolver = wr.ResourceResolver([group1, group3])
+        self.assertEqual(resolver._flat_resources(), [res1, res3, res2])
+
+        res3._include = False
+        self.assertEqual(resolver._flat_resources(), [res1, res2])
+
+        res3._include = True
+        group3._include = False
+        self.assertEqual(resolver._flat_resources(), [res1])
 
 
 if __name__ == '__main__':

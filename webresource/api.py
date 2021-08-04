@@ -1,3 +1,4 @@
+from collections import Counter
 import inspect
 import logging
 import os
@@ -7,7 +8,7 @@ import tempfile
 logger = logging.getLogger('webresource')
 
 
-class Config(object):
+class ResourceConfig(object):
     """Config singleton for web resources.
     """
 
@@ -26,10 +27,24 @@ class Config(object):
         self._merge_dir = path
 
 
-config = Config()
+config = ResourceConfig()
 
 
-class Resource(object):
+class ResourceMixin(object):
+    """Mixin for ``Resource`` and ``ResourceGroup``
+    """
+
+    def __init__(self, include):
+        self._include = include
+
+    @property
+    def include(self):
+        if callable(self._include):
+            return self._include()
+        return self._include
+
+
+class Resource(ResourceMixin):
     """A web resource.
     """
 
@@ -50,6 +65,7 @@ class Resource(object):
         include the resource.
         :param group: Optional resource group instance.
         """
+        super(Resource, self).__init__(include)
         self.name = name
         if not depends:
             depends = []
@@ -68,7 +84,6 @@ class Resource(object):
         if group:
             group.add(self)
         self.mergeable = mergeable
-        self.include = include
         self._config = _config
 
     @property
@@ -105,19 +120,19 @@ class CSSResource(Resource):
     _type = 'css'
 
 
-class ResourceGroup(object):
+class ResourceGroup(ResourceMixin):
     """A resource group.
     """
 
     def __init__(self, name, include=True):
         """Create resource group.
 
-        :param name: The resource group unique name.
+        :param name: The resource group name.
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         """
+        super(ResourceGroup, self).__init__(include)
         self.name = name
-        self.include = include
         self._members = []
 
     @property
@@ -137,17 +152,28 @@ class ResourceGroup(object):
         self._members.append(member)
 
     def __repr__(self):
-        return '<{} name="{}"">'.format(
+        return '<{} name="{}">'.format(
             self.__class__.__name__,
             self.name
         )
 
 
-class Resolver(object):
+class ResourceConflictError(Exception):
+
+    def __init__(self, counter):
+        conflicting = list()
+        for name, count in counter.items():
+            if count > 1:
+                conflicting.append(name)
+        msg = 'Conflicting resource names: {}'.format(conflicting)
+        super(ResourceConflictError, self).__init__(msg)
+
+
+class ResourceResolver(object):
     """Resource resolver.
     """
 
-    def __init__(self, members, _config=config):
+    def __init__(self, members):
         """Create resource resolver.
 
         :param members: Either single or list of ``Resource`` or
@@ -162,18 +188,13 @@ class Resolver(object):
                     'of ``ResourceGroup`` or ``Resource``'
                 )
         self.members = members
-        self._config = _config
 
-    def _flat_resource(self, members=None):
+    def _flat_resources(self, members=None):
         if members is None:
             members = self.members
         resources = list()
         for member in members:
-            if callable(member.include):
-                include = member.include()
-            else:
-                include = member.include
-            if not include:
+            if not member.include:
                 continue
             if isinstance(member, ResourceGroup):
                 resources += self._flat_resources(members=member.members)
@@ -183,6 +204,9 @@ class Resolver(object):
 
     def _resolve(self):
         resources = self._flat_resources()
+        counter = Counter(resources)
+        if len(resources) != len(counter):
+            raise ResourceConflictError(counter)
         names = [resource.name for resource in resources]
         def cmp(a, b):
             if a.depends is None:
