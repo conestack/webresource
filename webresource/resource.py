@@ -1,342 +1,196 @@
-from webresource.compat import add_metaclass
-import abc
 import inspect
 import logging
 import os
+import tempfile
 
 
 logger = logging.getLogger('webresource')
 
 
-class RegistryError(Exception):
-    """Resource registry related exception.
+class Config(object):
+    """Config singleton for web resources.
     """
+
+    def __init__(self):
+        self.debug = False
+        self._merge_dir = None
+
+    @property
+    def merge_dir(self):
+        if not self._merge_dir:
+            self._merge_dir = tempfile.mkdtemp()
+        return self._merge_dir
+
+    @merge_dir.setter
+    def merge_dir(self, path):
+        self._merge_dir = path
+
+
+config = Config()
+
+
+class Resource(object):
+    """A web resource.
+    """
+
+    def __init__(self, name, depends=None, directory=None, path='/',
+                 resource=None, compressed=None, mergeable=False,
+                 include=True, group=None, _congig=config)
+        """Create resource.
+
+        :param name: The resource unique name.
+        :param depends: Optional name or list of names of dependency resource.
+        :param directory: Directory containing the resource files.
+        :param path: URL path for HTML tag link creation.
+        :param resource: Resource file.
+        :param compressed: Optional compressed version of resource file.
+        :param mergeable: Flag whether it's safe to merge resource with other
+        resources.
+        :param include: Flag or callback function returning a flag whether to
+        include the resource.
+        :param group: Optional resource group instance.
+        """
+        self.name = name
+        if not depends:
+            depends = []
+        elif not isinstance(depends, [list, tuple]):
+            depends = [depends]
+        self.depends = depends
+        if not directory:
+            module = inspect.getmodule(inspect.currentframe().f_back)
+            directory = os.path.dirname(os.path.abspath(module.__file__))
+        self.directory = directory
+        self.path = path
+        self.resource = resource
+        self.compressed = compressed
+        if group:
+            group.add(self)
+        self.mergeable = mergeable
+        self.include = include
+        self._config = _config
+
+    @property
+    def file_path(self):
+        """Absolute resource file path depending on operation mode.
+        """
+        if self._config.debug and self.compressed:
+            file = self.compressed
+        else:
+            file = self.resource
+        return os.path.join(self.directory, file)
+
+    def __repr__(self):
+        return (
+            '<{} object, name={}, depends={}, path={} mergeable={}>'
+        ).format(
+            self.__class__.__name__,
+            self.name,
+            self.depends,
+            self.path,
+            self.mergeable
+        )
+
+
+class JSResource(Resource):
+    """A Javascript resource.
+    """
+    _type = 'js'
+
+
+class CSSResource(Resource):
+    """A CSS Resource.
+    """
+    _type = 'css'
 
 
 class ResourceGroup(object):
     """A resource group.
     """
 
-    def __init__(self, uid, skip=False):
+    def __init__(self, name, include=True):
         """Create resource group.
 
-        :param uid: The resource group unique identifier.
-        :param skip: Flag whether to exclude this resource group from
-            processing.
+        :param name: The resource group unique name.
+        :param include: Flag or callback function returning a flag whether to
+        include the resource.
         """
-        self.uid = uid
-        self.skip = skip
+        self.name = name
+        self.include = include
+        self._members = []
 
+    @property
+    def members(self):
+        return self._members
 
-@add_metaclass(abc.ABCMeta)
-class Resource(object):
-    """A web resource.
-    """
+    def add(self, member):
+        """Add member to resource group.
 
-    def __init__(self, uid, depends=None, resource_dir=None, source=None,
-                 target=None, compiler=None, compiler_opts=None, prefix='/',
-                 group=None):
-        """Create resource instance.
-
-        :param uid: The resource unique identifier.
-        :param depends: Optional uid or list of uids of dependency resource.
-        :param resource_dir: Directory containing the resource files.
-        :param source: Source file for this resource.
-        :param target: Bundling target. Either file name or dependency resource
-            if value starts with ``uid:``. If development mode, compilation
-            required and dependency resource defined as target, the compiled
-            resource gets placed in the resource directory.
-        :param compiler: Compiler to use.
-        :param compiler_opts: Dict containing compiler options.
-        :param prefix: Prefix for html tag link creation.
-        :param group: Resource group uid if this resource belongs to a resource
-            group.
+        :param member: Either ``ResourceGroup`` or ``Resource`` instance.
         """
-        self.uid = uid
-        if not depends:
-            depends = []
-        elif not isinstance(depends, list) and not isinstance(depends, tuple):
-            depends = [depends]
-        self.depends = depends
-        self.resource_dir = resource_dir
-        self.source = source
-        self.target = target
-        self.compiler = compiler
-        self.compiler_opts = compiler_opts
-        self.prefix = prefix
-        self.group = group
+        if not isinstance(member, [ResourceGroup, Resource]):
+            raise ValueError(
+                'Resource group can only contain instances '
+                'of ``ResourceGroup`` or ``Resource``'
+            )
+        self._members.append(member)
 
     def __repr__(self):
-        return (
-            '<{} object, uid={}, depends={}, source={}, '
-            'target={}, compiler={}, prefix={}>'
-        ).format(
+        return '<{} object, name={}>'.format(
             self.__class__.__name__,
-            self.uid,
-            self.depends,
-            self.source,
-            self.target,
-            self.compiler,
-            self.prefix
+            self.name
         )
 
-    @abc.abstractproperty
-    def registry(self):
-        """Registry dict related to this resource.
-        """
-        raise NotImplemened()
 
-    @property
-    def source_path(self):
-        """Absolute path to resource source.
-        """
-        return os.path.join(self.resource_dir, self.source)
-
-    @property
-    def target_path(self):
-        """Absolute path to resource target.
-        """
-        target = self.target
-        if not target:
-            target = self.source
-        if target.startswith('uid:'):
-            res = self.registry.get(target[4:])
-            if not res:
-                msg = 'Dependency resource {} not exists'.format(target[4:])
-                raise RegistryError(msg)
-            return res.target_path
-        return os.path.join(self.resource_dir, target)
-
-
-class JSResource(Resource):
-    """A Javascript resource.
+class Resolver(object):
+    """Resource resolver.
     """
 
-    @property
-    def registry(self):
-        """Javascript registry dict.
+    def __init__(self, members):
+        """Create resource resolver.
+
+        :param members: Either single or list of ``Resource`` or
+        ``ResourceGroup`` instances.
         """
-        return resource_registry.js
+        if not isinstance(members, [list, tuple]):
+            members = [members]
+        for member in members:
+            if not isinstance(member, [Resource, ResourceGroup]):
+                raise ValueError(
+                    'members can only contain instances '
+                    'of ``ResourceGroup`` or ``Resource``'
+                )
+        self.members = members
 
+    def _flat_resource(self, members=None):
+        if members is None:
+            members = self.members
+        resources = list()
+        for member in members:
+            if callable(member.include):
+                include = member.include()
+            else:
+                include = member.include
+            if not include:
+                continue
+            if isinstance(member, ResourceGroup):
+                resources += self._flat_resources(members=member.members)
+            else:
+                resources.append(member)
+        return resources
 
-class CSSResource(Resource):
-    """A CSS Resource.
-    """
-
-    @property
-    def registry(self):
-        """CSS registry dict.
-        """
-        return resource_registry.css
-
-
-class resource_registry(object):
-    """Resource registry singleton.
-    """
-
-    groups = dict()
-    """Resource groups dict.
-    """
-
-    js = dict()
-    """Javascript resources registry dict.
-    """
-
-    css = dict()
-    """CSS resources registry dict.
-    """
-
-    @staticmethod
-    def _register(reg, res):
-        """Register given resource in given registry.
-
-        :param reg: Registry dict.
-        :param res: Resouce instance.
-        """
-        if res.uid in reg:
-            old_res = reg[res.uid]
-            msg = 'Resource {} gets overwritten with {}'.format(old_res, res)
-            logger.info(msg)
-        reg[res.uid] = res
-
-    # XXX: classmethod
-    @staticmethod
-    def _resolve(reg):
-        """Resolve dependency tree of given registry and return resources in
-        correct order.
-
-        :param reg: Registry dict.
-        :return list: Resources sorted by dependency from passed registry dict.
-        """
-        def skip(res):
-            group = reg[res].group
-            if group and resource_registry.groups[group].skip:
-                return True
-            return False
-        res = [r for r in reg.keys() if not skip(r)]
-        cnt = len(res)
-        deps = dict()
-        def sort():
-            for i in range(cnt):
-                for dep in reg[res[i]].depends:
-                    try:
-                        j = res.index(dep)
-                    except ValueError:
-                        msg = 'Dependency resource {} not exists'.format(dep)
-                        raise RegistryError(msg)
-                    deps.setdefault(res[i], set()).add(dep)
-                    if res[i] in deps.setdefault(dep, set()):
-                        msg = 'Circular dependency {} - {}'.format(dep, res[i])
-                        raise RegistryError(msg)
-                    if j > i:
-                        res[i], res[j] = res[j], res[i]
-                        sort()
-        sort()
-        # XXX: sort by target
-        return [reg[k] for k in res]
-
-    @classmethod
-    def register_group(cls, group):
-        """Register resource group.
-
-        :param group: ResourceGroup instance.
-        """
-        groups = cls.groups
-        if group.uid in groups:
-            old_group = groups[group.uid]
-            msg = 'ResourceGroup {} gets overwritten with {}'.format(
-                old_group, group)
-            logger.info(msg)
-        groups[group.uid] = group
-
-    @classmethod
-    def register_js(cls, res):
-        """Register Javascript resource.
-
-        :param res: JSResource instance.
-        """
-        if not isinstance(res, JSResource):
-            raise ValueError('{} is no ``JSResource`` instance'.format(res))
-        cls._register(cls.js, res)
-
-    @classmethod
-    def resolve_js(cls):
-        """Resolve dependency tree of Javascript resources and return them
-        in correct order.
-
-        :return list: Javascript resources sorted by dependency.
-        """
-        return cls._resolve(cls.js)
-
-    @classmethod
-    def register_css(cls, res):
-        """Register CSS resource.
-
-        :param res: CSSResource instance.
-        """
-        if not isinstance(res, CSSResource):
-            raise ValueError('{} is no ``CSSResource`` instance'.format(res))
-        cls._register(cls.css, res)
-
-    @classmethod
-    def resolve_css(cls):
-        """Resolve dependency tree of CSS resources and return them
-        in correct order.
-
-        :return list: CSS resources sorted by dependency.
-        """
-        return cls._resolve(cls.css)
-
-
-def resource_directories(development=False):
-    """Return resources related resource directories.
-
-    This function is supposed to collect all directories containing resources
-    which needs to be delivered to the browser along with the corresponding
-    URL prefixes. The framework integration code is then responsible to make
-    these resource directories available via browser under the related prefix.
-    """
-    # XXX
-
-
-def resource_group(uid, skip=False):
-    """Register a resource group.
-
-    :param uid: Unique identifyer of resource group.
-    :param skip: Flag whether to skip inclusion of resource group related
-        resources.
-    :return object: ResourceGroup instance.
-    """
-    group = ResourceGroup(uid, skip=skip)
-    resource_registry.register_group(group)
-    return group
-
-
-def js_resource(uid, depends=None, resource_dir=None, source=None,
-                target=None, compiler=None, compiler_opts=None, prefix='/'):
-    """Register a Javascript resource.
-
-    :param uid: The resource unique identifier.
-    :param depends: Optional uid or list of uids of dependency resource.
-    :param resource_dir: Directory containing the resource files. If not given,
-        resource directory gets calculated from calling package.
-    :param source: Source file for this resource.
-    :param target: Bundling target. Either file name or dependency resource
-        if value starts with ``uid:``. If development mode, compilation
-        required and dependency resource defined as target, the compiled
-        resource gets placed in the resource directory.
-    :param compiler: Compiler to use.
-    :param compiler_opts: Dict containing compiler options.
-    :param prefix: Prefix for html tag link creation.
-    :return object: JSResource instance.
-    """
-    if not resource_dir:
-        module = inspect.getmodule(inspect.currentframe().f_back)
-        resource_dir = os.path.dirname(os.path.abspath(module.__file__))
-    res = JSResource(
-        uid,
-        depends=depends,
-        source=source,
-        resource_dir=resource_dir,
-        target=target,
-        compiler=compiler,
-        compiler_opts=compiler_opts,
-        prefix=prefix
-    )
-    resource_registry.register_js(res)
-    return res
-
-
-def css_resource(uid, depends=None, resource_dir=None, source=None,
-                 target=None, compiler=None, compiler_opts=None, prefix='/'):
-    """Register a CSS resource.
-
-    :param uid: The resource unique identifier.
-    :param depends: Optional uid or list of uids of dependency resource.
-    :param resource_dir: Directory containing the resource files. If not given,
-        resource directory gets calculated from calling package.
-    :param source: Source file for this resource.
-    :param target: Bundling target. Either file name or dependency resource
-        if value starts with ``uid:``. If development mode, compilation
-        required and dependency resource defined as target, the compiled
-        resource gets placed in the resource directory.
-    :param compiler: Compiler to use.
-    :param compiler_opts: Dict containing compiler options.
-    :param prefix: Prefix for html tag link creation.
-    :return object: CSSResource instance.
-    """
-    if not resource_dir:
-        module = inspect.getmodule(inspect.currentframe().f_back)
-        resource_dir = os.path.dirname(os.path.abspath(module.__file__))
-    res = CSSResource(
-        uid,
-        depends=depends,
-        source=source,
-        resource_dir=resource_dir,
-        target=target,
-        compiler=compiler,
-        compiler_opts=compiler_opts,
-        prefix=prefix
-    )
-    resource_registry.register_css(res)
-    return res
+    def _resolve(self):
+        resources = self._flat_resources()
+        names = [resource.name for resource in resources]
+        def cmp(a, b):
+            if a.depends is None:
+                return 0
+            if a.depends not in names:
+                msg = 'Undefined dependencs "{}" defined in "{}"'.format(
+                    a.depends,
+                    a.name
+                )
+                raise ValueError(msg)
+            if a.depends == b.depends:
+                return 1
+            return -1
+        return sorted(resources, cmp=cmp)
