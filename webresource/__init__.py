@@ -4,4 +4,6 @@ from webresource.api import JSResource
 from webresource.api import ResourceCircularDependencyError
 from webresource.api import ResourceConflictError
 from webresource.api import ResourceGroup
+from webresource.api import ResourceMissingDependencyError
 from webresource.api import ResourceResolver
+from webresource.api import ResourceRenderer

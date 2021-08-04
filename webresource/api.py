@@ -1,4 +1,5 @@
 from collections import Counter
+import hashlib
 import inspect
 import logging
 import os
@@ -31,7 +32,7 @@ config = ResourceConfig()
 
 
 class ResourceMixin(object):
-    """Mixin for ``Resource`` and ``ResourceGroup``
+    """Mixin for ``Resource`` and ``ResourceGroup``.
     """
 
     def __init__(self, include):
@@ -83,14 +84,18 @@ class Resource(ResourceMixin):
         self._config = _config
 
     @property
+    def file_name(self):
+        """Resource file name depending on operation mode.
+        """
+        if not self._config.debug and self.compressed:
+            return self.compressed
+        return self.resource
+
+    @property
     def file_path(self):
         """Absolute resource file path depending on operation mode.
         """
-        if not self._config.debug and self.compressed:
-            file = self.compressed
-        else:
-            file = self.resource
-        return os.path.join(self.directory, file)
+        return os.path.join(self.directory, self.file_name)
 
     def __repr__(self):
         return (
@@ -172,6 +177,13 @@ class ResourceCircularDependencyError(ValueError):
         super(ResourceCircularDependencyError, self).__init__(msg)
 
 
+class ResourceMissingDependencyError(ValueError):
+
+    def __init__(self, resources):
+        msg = 'Resource define missing dependency: {}'.format(resources)
+        super(ResourceMissingDependencyError, self).__init__(msg)
+
+
 class ResourceResolver(object):
     """Resource resolver.
     """
@@ -207,7 +219,8 @@ class ResourceResolver(object):
 
     def resolve(self):
         resources = self._flat_resources()
-        counter = Counter([res.name for res in resources])
+        names = [res.name for res in resources]
+        counter = Counter(names)
         if len(resources) != len(counter):
             raise ResourceConflictError(counter)
         ret = []
@@ -217,15 +230,12 @@ class ResourceResolver(object):
                 ret.append(resource)
                 handled[resource.name] = resource
                 resources.remove(resource)
+            elif not resource.depends in names:
+                raise ResourceMissingDependencyError(resource)
         count = len(resources)
         while count > 0:
             count -= 1
             for resource in resources[:]:
-                #if not handled:
-                #    ret.append(resource)
-                #    handled[resource.name] = resource
-                #    resources.remove(resource)
-                #    break
                 if resource.depends in handled:
                     dependency = handled[resource.depends]
                     index = ret.index(dependency)
@@ -236,3 +246,33 @@ class ResourceResolver(object):
         if resources:
             raise ResourceCircularDependencyError(resources)
         return ret
+
+
+class ResourceRenderer(object):
+    """Resource renderer.
+    """
+
+    def __init__(self, resolver, base_url='https://tld.org', _config=config):
+        """Create resource renderer.
+
+        :param resolver: ``ResourceResolver`` instance.
+        :param base_url: Base URL to render resource HTML tags.
+        """
+        self.resolver = resolver
+        self.base_url = base_url
+        self._config = _config
+
+    def _js_tag(self, path):
+        return '<script src="{}{}"></script>\n'.format(self.base_url, path)
+
+    def _css_tag(self, path, media='all'):
+        return (
+            '<link href="{}{}" rel="stylesheet" type="text/css" media="{}">\n'
+        ).format(self.base_url, path, media)
+
+    def _hashed_name(self, names, ext):
+        hash_ = hashlib.sha256(''.join(names).encode('utf-8')).hexdigest()
+        return '{}.{}'.format(hash_, ext)
+
+    def render(self):
+        pass

@@ -58,12 +58,15 @@ class TestWebresource(unittest.TestCase):
             resource='res.ext',
             _config=config
         )
+        self.assertEqual(resource.file_name, 'res.ext')
         self.assertEqual(resource.file_path, '/dir/res.ext')
 
         resource.compressed = 'res.min.ext'
+        self.assertEqual(resource.file_name, 'res.min.ext')
         self.assertEqual(resource.file_path, '/dir/res.min.ext')
 
         config.debug = True
+        self.assertEqual(resource.file_name, 'res.ext')
         self.assertEqual(resource.file_path, '/dir/res.ext')
 
         group = wr.ResourceGroup('group')
@@ -112,11 +115,19 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(str(err), 'Conflicting resource names: [\'b\', \'c\']')
 
     def test_ResourceCircularDependencyError(self):
-        resource = Resource('name1', resource='res1.ext', depends='name2')
+        resource = Resource('res1', resource='res1.ext', depends='res2')
         err = wr.ResourceCircularDependencyError([resource])
         self.assertEqual(str(err),
             'Resources define circular dependencies: '
-            '[<Resource name="name1", depends="name2", path="/" mergeable=False>]'
+            '[<Resource name="res1", depends="res2", path="/" mergeable=False>]'
+        )
+
+    def test_ResourceMissingDependencyError(self):
+        resource = Resource('res', resource='res.ext', depends='missing')
+        err = wr.ResourceMissingDependencyError(resource)
+        self.assertEqual(str(err),
+            'Resource define missing dependency: '
+            '<Resource name="res", depends="missing", path="/" mergeable=False>'
         )
 
     def test_ResourceResolver__flat_resources(self):
@@ -164,17 +175,52 @@ class TestWebresource(unittest.TestCase):
         res1 = Resource('res1', resource='res1.ext', depends='res2')
         res2 = Resource('res2', resource='res2.ext', depends='res3')
         res3 = Resource('res3', resource='res3.ext')
+
         resolver = wr.ResourceResolver([res1, res2, res3])
         self.assertEqual(resolver.resolve(), [res3, res2, res1])
+
         resolver = wr.ResourceResolver([res2, res1, res3])
         self.assertEqual(resolver.resolve(), [res3, res2, res1])
+
         resolver = wr.ResourceResolver([res1, res3, res2])
         self.assertEqual(resolver.resolve(), [res3, res2, res1])
 
         res1 = Resource('res1', resource='res1.ext', depends='res2')
         res2 = Resource('res2', resource='res2.ext', depends='res1')
+
         resolver = wr.ResourceResolver([res1, res2])
         self.assertRaises(wr.ResourceCircularDependencyError, resolver.resolve)
+
+        res1 = Resource('res1', resource='res1.ext', depends='res2')
+        res2 = Resource('res2', resource='res2.ext', depends='missing')
+
+        resolver = wr.ResourceResolver([res1, res2])
+        self.assertRaises(wr.ResourceMissingDependencyError, resolver.resolve)
+
+    def test_ResourceRenderer__js_tag(self):
+        renderer = wr.ResourceRenderer(None)
+        self.assertEqual(
+            renderer._js_tag('/js/res.js'),
+            '<script src="https://tld.org/js/res.js"></script>\n'
+        )
+
+    def test_ResourceRenderer__css_tag(self):
+        renderer = wr.ResourceRenderer(None)
+        self.assertEqual(renderer._css_tag('/css/res.css'), (
+            '<link href="https://tld.org/css/res.css" '
+            'rel="stylesheet" type="text/css" media="all">\n'
+        ))
+        self.assertEqual(renderer._css_tag('/css/res.css', media='print'), (
+            '<link href="https://tld.org/css/res.css" '
+            'rel="stylesheet" type="text/css" media="print">\n'
+        ))
+
+    def test_ResourceRenderer__hashed_name(self):
+        renderer = wr.ResourceRenderer(None)
+        self.assertEqual(
+            renderer._hashed_name(['res1', 'res2'], 'ext'),
+            '74d837be6666f7c2e24ec75bac34a798bdfd01d4d3550ac29b2a9392e7eef1e3.ext'
+        )
 
 
 if __name__ == '__main__':
