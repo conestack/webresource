@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from setuptools import find_packages
 from setuptools import setup
 import os
@@ -10,7 +9,7 @@ def read_file(name):
 
 
 version = '0.1.dev0'
-shortdesc = "Manage web resources and dependencies"
+shortdesc = "Deliver web resources"
 longdesc = '\n\n'.join([read_file(name) for name in [
     'README.rst',
     'CHANGES.rst',
@@ -29,25 +28,15 @@ setup(
         'Topic :: Software Development',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
     ],
-    keywords='web resource dependencies javascript CSS',
-    author='Robert Niederreiter',
-    author_email='office@squarewave.at',
-    url='http://github.com/rnixx/webresource',
-    license='BSD',
+    keywords='web resources dependencies javascript CSS',
+    author='Cone Contributors',
+    author_email='dev@conestack.org',
+    url='http://github.com/conestack/webresource',
+    license='Simplified BSD',
     packages=['webresource'],
     zip_safe=True,
     install_requires=[
         'setuptools'
-    ],
-    extras_require={
-    },
-    test_suite='webresource.test_suite',
-    entry_points="""
-    """
+    ]
 )
