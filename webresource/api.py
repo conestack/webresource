@@ -83,7 +83,7 @@ class Resource(object):
 
     def __repr__(self):
         return (
-            '<{} object, name={}, depends={}, path={} mergeable={}>'
+            '<{} name="{}", depends=[{}], path="{}" mergeable={}>'
         ).format(
             self.__class__.__name__,
             self.name,
@@ -137,7 +137,7 @@ class ResourceGroup(object):
         self._members.append(member)
 
     def __repr__(self):
-        return '<{} object, name={}>'.format(
+        return '<{} name="{}"">'.format(
             self.__class__.__name__,
             self.name
         )

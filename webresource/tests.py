@@ -40,7 +40,10 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.include, True)
         self.assertTrue(resource._config is wr.config)
 
-        self.assertEqual(repr(resource), '')
+        self.assertEqual(
+            repr(resource),
+            '<Resource name="resource", depends=[], path="/" mergeable=False>'
+        )
 
         resource = Resource('resource', resource='res.ext', depends='other')
         self.assertEqual(resource.depends, ['other'])
