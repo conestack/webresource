@@ -304,7 +304,7 @@ class TestWebresource(unittest.TestCase):
         self.assertRaises(wr.ResourceMissingDependencyError, resolver.resolve)
 
     def test_ResourceRenderer(self):
-        resources = wr.ResourceGroup('res')
+        resources = wr.ResourceGroup('res', path='res')
         icon = wr.LinkResource(
             'icon',
             resource='icon.png',
@@ -329,25 +329,25 @@ class TestWebresource(unittest.TestCase):
 
         rendered = renderer.render()
         self.assertEqual(rendered, (
-            '<link href="https://example.com/icon.png" '
+            '<link href="https://example.com/res/icon.png" '
                   'rel="icon" type="image/png" />\n'
-            '<link href="https://example.com/styles.css" media="all" '
+            '<link href="https://example.com/res/styles.css" media="all" '
                   'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
                   'rel="stylesheet" type="text/css" />\n'
-            '<script src="https://example.com/script.min.js"></script>'
+            '<script src="https://example.com/res/script.min.js"></script>'
         ))
 
         wr.config.development = True
         rendered = renderer.render()
         self.assertEqual(rendered, (
-            '<link href="https://example.com/icon.png" '
+            '<link href="https://example.com/res/icon.png" '
                   'rel="icon" type="image/png" />\n'
-            '<link href="https://example.com/styles.css" media="all" '
+            '<link href="https://example.com/res/styles.css" media="all" '
                   'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
                   'rel="stylesheet" type="text/css" />\n'
-            '<script src="https://example.com/script.js"></script>'
+            '<script src="https://example.com/res/script.js"></script>'
         ))
 
 

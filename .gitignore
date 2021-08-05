@@ -2,6 +2,7 @@
 /.coverage
 /.vscode/
 /bin/
+/docs/html/
 /htmlcov/
 /include/
 /lib/
