@@ -9,13 +9,16 @@ import webresource as wr
 
 class TestWebresource(unittest.TestCase):
 
+    def tearDown(self):
+        wr.config.development = False
+
     def test_ResourceConfig(self):
         config = ResourceConfig()
         self.assertIsInstance(wr.config, ResourceConfig)
-        self.assertFalse(config.debug)
+        self.assertFalse(config.development)
 
-        config.debug = True
-        self.assertTrue(config.debug)
+        config.development = True
+        self.assertTrue(config.development)
 
     def test_ResourceMixin(self):
         mixin = ResourceMixin(True)
@@ -41,19 +44,12 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.crossorigin, None)
         self.assertEqual(resource.referrerpolicy, None)
         self.assertEqual(resource.type_, None)
-        self.assertTrue(resource._config is wr.config)
         self.assertEqual(
             repr(resource),
             '<Resource name="resource", depends="", path="/">'
         )
 
-        config = ResourceConfig()
-        resource = Resource(
-            'resource',
-            directory='/dir',
-            resource='res.ext',
-            _config=config
-        )
+        resource = Resource('resource', directory='/dir', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
         self.assertEqual(resource.file_path, '/dir/res.ext')
 
@@ -61,9 +57,10 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.file_name, 'res.min.ext')
         self.assertEqual(resource.file_path, '/dir/res.min.ext')
 
-        config.debug = True
+        wr.config.development = True
         self.assertEqual(resource.file_name, 'res.ext')
         self.assertEqual(resource.file_path, '/dir/res.ext')
+        wr.config.development = False
 
         group = wr.ResourceGroup('group')
         resource = Resource('resource', resource='res.ext', group=group)
@@ -85,18 +82,16 @@ class TestWebresource(unittest.TestCase):
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
 
-        config = ResourceConfig()
         resource = Resource(
             'resource',
             resource='res.ext',
             compressed='res.min',
-            path='/resources',
-            _config=config
+            path='/resources'
         )
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.min')
 
-        config.debug = True
+        wr.config.development = True
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
 
@@ -283,7 +278,7 @@ class TestWebresource(unittest.TestCase):
             '<script src="https://example.com/script.min.js"></script>'
         ))
 
-        wr.config.debug = True
+        wr.config.development = True
         rendered = renderer.render()
         self.assertEqual(rendered, (
             '<link href="https://example.com/icon.png" '
@@ -292,7 +287,6 @@ class TestWebresource(unittest.TestCase):
                   'rel="stylesheet" type="text/css" />\n'
             '<script src="https://example.com/script.js"></script>'
         ))
-        wr.config.debug = False
 
 
 if __name__ == '__main__':

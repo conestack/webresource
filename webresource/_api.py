@@ -14,7 +14,7 @@ class ResourceConfig(object):
     """
 
     def __init__(self):
-        self.debug = False
+        self.development = False
 
 
 config = ResourceConfig()
@@ -40,8 +40,7 @@ class Resource(ResourceMixin):
 
     def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, include=True, group=None,
-                 crossorigin=None, referrerpolicy=None, type_=None,
-                 _config=config):
+                 crossorigin=None, referrerpolicy=None, type_=None):
         """Create resource.
 
         :param name: The resource unique name.
@@ -75,13 +74,12 @@ class Resource(ResourceMixin):
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
-        self._config = _config
 
     @property
     def file_name(self):
         """Resource file name depending on operation mode.
         """
-        if not self._config.debug and self.compressed:
+        if not config.development and self.compressed:
             return self.compressed
         return self.resource
 
@@ -131,7 +129,7 @@ class ScriptResource(Resource):
     def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, include=True, group=None,
                  crossorigin=None, referrerpolicy=None, type_=None, async_=None,
-                 defer=None, integrity=None, nomodule=None, _config=config):
+                 defer=None, integrity=None, nomodule=None):
         """Create script resource.
 
         :param name: The resource unique name.
@@ -160,7 +158,7 @@ class ScriptResource(Resource):
             name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
             group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
-            type_=type_, _config=_config
+            type_=type_
         )
         self.async_ = async_
         self.defer = defer
@@ -187,8 +185,7 @@ class LinkResource(Resource):
     def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, include=True, group=None,
                  crossorigin=None, referrerpolicy=None, type_=None,
-                 hreflang=None, media=None, rel=None, sizes=None, title=None,
-                 _config=config):
+                 hreflang=None, media=None, rel=None, sizes=None, title=None):
         """Create link resource.
 
         :param name: The resource unique name.
@@ -218,7 +215,7 @@ class LinkResource(Resource):
             name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
             group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
-            type_=type_, _config=_config
+            type_=type_
         )
         self.hreflang = hreflang
         self.media = media
@@ -248,7 +245,7 @@ class StyleResource(LinkResource):
                  resource=None, compressed=None, include=True, group=None,
                  crossorigin=None, referrerpolicy=None, hreflang=None,
                  media='all', rel='stylesheet', sizes=None,
-                 title=None, _config=config):
+                 title=None):
         """Create link resource.
 
         :param name: The resource unique name.
@@ -276,7 +273,7 @@ class StyleResource(LinkResource):
             resource=resource, compressed=compressed, include=include,
             group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
             type_='text/css', hreflang=hreflang, media=media, rel=rel,
-            sizes=None, title=title, _config=_config
+            sizes=None, title=title
         )
 
 
@@ -411,7 +408,7 @@ class ResourceRenderer(object):
     """Resource renderer.
     """
 
-    def __init__(self, resolver, base_url='https://tld.org', _config=config):
+    def __init__(self, resolver, base_url='https://tld.org'):
         """Create resource renderer.
 
         :param resolver: ``ResourceResolver`` instance.
@@ -419,7 +416,6 @@ class ResourceRenderer(object):
         """
         self.resolver = resolver
         self.base_url = base_url
-        self._config = _config
 
     def render(self):
         return u'\n'.join([

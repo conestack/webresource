@@ -15,14 +15,4 @@ Features
 
 - Conditional delivery of resources.
 
-- Merging of resources.
-
 - Develoment and a production mode.
-
-
-Overview
----------
-
-.. code-block:: python
-
-    import webresource as wr

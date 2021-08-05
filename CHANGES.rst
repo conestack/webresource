@@ -1,7 +1,7 @@
 Changelog
 =========
 
-0.1 (unreleased)
-----------------
+1.0b1 (unreleased)
+------------------
 
-- Initial work.
+- Initial release.
