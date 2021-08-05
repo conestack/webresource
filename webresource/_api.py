@@ -40,7 +40,7 @@ class Resource(ResourceMixin):
 
     def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, include=True, group=None,
-                 crossorigin=None, referrerpolicy=None, type_=None):
+                 url=None, crossorigin=None, referrerpolicy=None, type_=None):
         """Create resource.
 
         :param name: The resource unique name.
@@ -52,11 +52,14 @@ class Resource(ResourceMixin):
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
+        :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
         :param referrerpolicy: Specifies which referrer information to send when
         fetching the resource.
         :param type_: Specifies the media type of the resource.
         """
+        if resource is None and url is None:
+            raise ValueError('Either resource or url must be given')
         super(Resource, self).__init__(include)
         self.name = name
         self.depends = depends
@@ -65,12 +68,11 @@ class Resource(ResourceMixin):
             directory = os.path.dirname(os.path.abspath(module.__file__))
         self.directory = directory
         self.path = path
-        if resource is None:
-            raise ValueError('No resource given')
         self.resource = resource
         self.compressed = compressed
         if group:
             group.add(self)
+        self.url = url
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
@@ -90,6 +92,8 @@ class Resource(ResourceMixin):
         return os.path.join(self.directory, self.file_name)
 
     def resource_url(self, base_url):
+        if self.url is not None:
+            return self.url
         path = self.path.strip('/')
         if path:
             parts = [base_url.strip('/'), path, self.file_name]
@@ -128,8 +132,8 @@ class ScriptResource(Resource):
 
     def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, include=True, group=None,
-                 crossorigin=None, referrerpolicy=None, type_=None, async_=None,
-                 defer=None, integrity=None, nomodule=None):
+                 url=None, crossorigin=None, referrerpolicy=None, type_=None,
+                 async_=None, defer=None, integrity=None, nomodule=None):
         """Create script resource.
 
         :param name: The resource unique name.
@@ -141,6 +145,7 @@ class ScriptResource(Resource):
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
+        :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
         :param referrerpolicy: Specifies which referrer information to send when
         fetching the resource.
@@ -157,8 +162,8 @@ class ScriptResource(Resource):
         super(ScriptResource, self).__init__(
             name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
-            type_=type_
+            group=group, url=url, crossorigin=crossorigin,
+            referrerpolicy=referrerpolicy, type_=type_
         )
         self.async_ = async_
         self.defer = defer
@@ -184,7 +189,7 @@ class LinkResource(Resource):
 
     def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, include=True, group=None,
-                 crossorigin=None, referrerpolicy=None, type_=None,
+                 url=None, crossorigin=None, referrerpolicy=None, type_=None,
                  hreflang=None, media=None, rel=None, sizes=None, title=None):
         """Create link resource.
 
@@ -197,6 +202,7 @@ class LinkResource(Resource):
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
+        :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
         :param referrerpolicy: Specifies which referrer information to send when
         fetching the resource.
@@ -214,8 +220,8 @@ class LinkResource(Resource):
         super(LinkResource, self).__init__(
             name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
-            type_=type_
+            group=group, url=url, crossorigin=crossorigin,
+            referrerpolicy=referrerpolicy, type_=type_
         )
         self.hreflang = hreflang
         self.media = media
@@ -243,9 +249,8 @@ class StyleResource(LinkResource):
 
     def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, include=True, group=None,
-                 crossorigin=None, referrerpolicy=None, hreflang=None,
-                 media='all', rel='stylesheet', sizes=None,
-                 title=None):
+                 url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
+                 media='all', rel='stylesheet', sizes=None, title=None):
         """Create link resource.
 
         :param name: The resource unique name.
@@ -257,6 +262,7 @@ class StyleResource(LinkResource):
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
+        :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
         :param referrerpolicy: Specifies which referrer information to send when
         fetching the resource.
@@ -271,9 +277,9 @@ class StyleResource(LinkResource):
         super(StyleResource, self).__init__(
             name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
-            type_='text/css', hreflang=hreflang, media=media, rel=rel,
-            sizes=None, title=title
+            group=group, url=url, crossorigin=crossorigin,
+            referrerpolicy=referrerpolicy, type_='text/css', hreflang=hreflang,
+            media=media, rel=rel, sizes=None, title=title
         )
 
 

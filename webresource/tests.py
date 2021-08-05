@@ -42,6 +42,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
         self.assertEqual(resource.crossorigin, None)
+        self.assertEqual(resource.crossorigin, None)
         self.assertEqual(resource.referrerpolicy, None)
         self.assertEqual(resource.type_, None)
         self.assertEqual(
@@ -94,6 +95,10 @@ class TestWebresource(unittest.TestCase):
         wr.config.development = True
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
+
+        resource = Resource('resource', url='https://ext.org/res')
+        resource_url = resource.resource_url('')
+        self.assertEqual(resource_url, 'https://ext.org/res')
 
     def test_ScriptResource(self):
         script = wr.ScriptResource('js_res', resource='res.js')
@@ -260,6 +265,11 @@ class TestWebresource(unittest.TestCase):
             type_='image/png'
         )
         style = wr.StyleResource('css', resource='styles.css', group=resources)
+        external = wr.StyleResource(
+            'ext_css',
+            url='https://ext.org/styles.css',
+            group=resources
+        )
         script = wr.ScriptResource(
             'js',
             resource='script.js',
@@ -275,6 +285,8 @@ class TestWebresource(unittest.TestCase):
                   'rel="icon" type="image/png" />\n'
             '<link href="https://example.com/styles.css" media="all" '
                   'rel="stylesheet" type="text/css" />\n'
+            '<link href="https://ext.org/styles.css" media="all" '
+                  'rel="stylesheet" type="text/css" />\n'
             '<script src="https://example.com/script.min.js"></script>'
         ))
 
@@ -284,6 +296,8 @@ class TestWebresource(unittest.TestCase):
             '<link href="https://example.com/icon.png" '
                   'rel="icon" type="image/png" />\n'
             '<link href="https://example.com/styles.css" media="all" '
+                  'rel="stylesheet" type="text/css" />\n'
+            '<link href="https://ext.org/styles.css" media="all" '
                   'rel="stylesheet" type="text/css" />\n'
             '<script src="https://example.com/script.js"></script>'
         ))
