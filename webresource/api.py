@@ -51,7 +51,8 @@ class Resource(ResourceMixin):
 
     def __init__(self, name, depends='', directory=None, path='/',
                  resource=None, compressed=None, mergeable=False,
-                 include=True, group=None, _config=config):
+                 include=True, group=None, crossorigin=None, referrerpolicy=None,
+                 type_=None, _config=config):
         """Create resource.
 
         :param name: The resource unique name.
@@ -65,6 +66,10 @@ class Resource(ResourceMixin):
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
+        :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
+        :param referrerpolicy: Specifies which referrer information to send when
+        fetching the resource.
+        :param type_: Specifies the media type of the resource.
         """
         super(Resource, self).__init__(include)
         self.name = name
@@ -81,6 +86,9 @@ class Resource(ResourceMixin):
         if group:
             group.add(self)
         self.mergeable = mergeable
+        self.crossorigin = crossorigin
+        self.referrerpolicy = referrerpolicy
+        self.type_ = type_
         self._config = _config
 
     @property
@@ -109,16 +117,144 @@ class Resource(ResourceMixin):
         )
 
 
-class JSResource(Resource):
+class ScriptResource(Resource):
     """A Javascript resource.
     """
-    _type = 'js'
+
+    def __init__(self, name, depends='', directory=None, path='/',
+                 resource=None, compressed=None, mergeable=False,
+                 include=True, group=None, crossorigin=None,
+                 referrerpolicy=None, type_=None, async_=None, defer=None,
+                 integrity=None, nomodule=None, _config=config):
+        """Create script resource.
+
+        :param name: The resource unique name.
+        :param depends: Optional name of dependency resource.
+        :param directory: Directory containing the resource files.
+        :param path: URL path for HTML tag link creation.
+        :param resource: Resource file.
+        :param compressed: Optional compressed version of resource file.
+        :param mergeable: Flag whether it's safe to merge resource with other
+        resources.
+        :param include: Flag or callback function returning a flag whether to
+        include the resource.
+        :param group: Optional resource group instance.
+        :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
+        :param referrerpolicy: Specifies which referrer information to send when
+        fetching the resource.
+        :param type_: Specifies the media type of the resource.
+        :param async_: Specifies that the script is executed asynchronously
+        (only for external scripts)
+        :param defer: Specifies that the script is executed when the page has
+        finished parsing (only for external scripts).
+        :param integrity: Allows a browser to check the fetched script to ensure
+        that the code is never loaded if the source has been manipulated.
+        :param nomodule: Allows a browser to check the fetched script to ensure
+        that the code is never loaded if the source has been manipulated.
+        """
+        super(ScriptResource, self).__init__(
+            name, depends=depends, directory=directory, path=path,
+            resource=resource, compressed=compressed, mergeable=mergeable,
+            include=include, group=group, crossorigin=crossorigin,
+            referrerpolicy=referrerpolicy, type_=type_, _config=_config
+        )
+        self.async_ = async_
+        self.defer = defer
+        self.integrity = integrity
+        self.nomodule = nomodule
 
 
-class CSSResource(Resource):
-    """A CSS Resource.
+class LinkResource(Resource):
+    """A Link Resource.
     """
-    _type = 'css'
+
+    def __init__(self, name, depends='', directory=None, path='/',
+                 resource=None, compressed=None, mergeable=False,
+                 include=True, group=None, crossorigin=None,
+                 referrerpolicy=None, type_=None, hreflang=None,
+                 media=None, rel=None, sizes=None,
+                 title=None, _config=config):
+        """Create link resource.
+
+        :param name: The resource unique name.
+        :param depends: Optional name of dependency resource.
+        :param directory: Directory containing the resource files.
+        :param path: URL path for HTML tag link creation.
+        :param resource: Resource file.
+        :param compressed: Optional compressed version of resource file.
+        :param mergeable: Flag whether it's safe to merge resource with other
+        resources.
+        :param include: Flag or callback function returning a flag whether to
+        include the resource.
+        :param group: Optional resource group instance.
+        :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
+        :param referrerpolicy: Specifies which referrer information to send when
+        fetching the resource.
+        :param type_: Specifies the media type of the resource.
+        :param hreflang: Specifies the language of the text in the linked
+        document.
+        :param media: Specifies on what device the linked document will be
+        displayed.
+        :param rel: Required. Specifies the relationship between the current
+        document and the linked document.
+        :param sizes: Specifies the size of the linked resource. Only for
+        rel="icon".
+        :param title: Defines a preferred or an alternate stylesheet.
+        """
+        super(LinkResource, self).__init__(
+            name, depends=depends, directory=directory, path=path,
+            resource=resource, compressed=compressed, mergeable=mergeable,
+            include=include, group=group, crossorigin=crossorigin,
+            referrerpolicy=referrerpolicy, type_=type_, _config=_config
+        )
+        self.hreflang = hreflang
+        self.media = media
+        self.rel = rel
+        self.sizes = sizes
+        self.title = title
+
+
+class StyleResource(LinkResource):
+    """A Stylesheet Resource.
+    """
+
+    def __init__(self, name, depends='', directory=None, path='/',
+                 resource=None, compressed=None, mergeable=False,
+                 include=True, group=None, crossorigin=None,
+                 referrerpolicy=None, hreflang=None,
+                 media='all', rel='stylesheet', sizes=None,
+                 title=None, _config=config):
+        """Create link resource.
+
+        :param name: The resource unique name.
+        :param depends: Optional name of dependency resource.
+        :param directory: Directory containing the resource files.
+        :param path: URL path for HTML tag link creation.
+        :param resource: Resource file.
+        :param compressed: Optional compressed version of resource file.
+        :param mergeable: Flag whether it's safe to merge resource with other
+        resources.
+        :param include: Flag or callback function returning a flag whether to
+        include the resource.
+        :param group: Optional resource group instance.
+        :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
+        :param referrerpolicy: Specifies which referrer information to send when
+        fetching the resource.
+        :param hreflang: Specifies the language of the text in the linked
+        document.
+        :param media: Specifies on what device the linked document will be
+        displayed. Defaults to "all".
+        :param rel: Specifies the relationship between the current document and
+        the linked document. Defaults to "stylesheet".
+        :param title: Defines a preferred or an alternate stylesheet.
+        """
+        super(StyleResource, self).__init__(
+            name, depends=depends, directory=directory, path=path,
+            resource=resource, compressed=compressed, mergeable=mergeable,
+            include=include, group=group, crossorigin=crossorigin,
+            referrerpolicy=referrerpolicy, type_='text/css', hreflang=hreflang,
+            media=media, rel=rel, sizes=None, title=title, _config=_config
+        )
 
 
 class ResourceGroup(ResourceMixin):
@@ -262,6 +398,15 @@ class ResourceRenderer(object):
         self.base_url = base_url
         self._config = _config
 
+    def _tag(self, tag, closing_tag, **attrs):
+        attrs_ = list()
+        for attr_name in attrs:
+            attrs_.append(u'{0}="{1}"'.format(attr_name, attrs[attr_name]))
+        attrs_ = u' {0}'.format(u' '.join(sorted(attrs_)))
+        if not closing_tag:
+            return u'<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
+        return u'<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
+
     def _js_tag(self, path):
         return '<script src="{}{}"></script>\n'.format(self.base_url, path)
 
@@ -272,7 +417,7 @@ class ResourceRenderer(object):
 
     def _hashed_name(self, names, ext):
         hash_ = hashlib.sha256(''.join(names).encode('utf-8')).hexdigest()
-        return '{}.{}'.format(hash_, ext)
+        return u'{}.{}'.format(hash_, ext)
 
     def render(self):
         pass

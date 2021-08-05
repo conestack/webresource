@@ -1,6 +1,7 @@
 from collections import Counter
-from webresource.api import ResourceConfig
 from webresource.api import Resource
+from webresource.api import ResourceConfig
+from webresource.api import ResourceMixin
 import shutil
 import unittest
 import webresource as wr
@@ -26,11 +27,21 @@ class TestWebresource(unittest.TestCase):
 
         self.assertIsInstance(wr.config, ResourceConfig)
 
+    def test_ResourceMixin(self):
+        mixin = ResourceMixin(True)
+        self.assertEqual(mixin.include, True)
+
+        def include():
+            return False
+
+        mixin = ResourceMixin(include)
+        self.assertFalse(mixin.include)
+
     def test_Resource(self):
         self.assertRaises(ValueError, Resource, 'resource')
 
         resource = Resource('resource', resource='res.ext')
-
+        self.assertIsInstance(resource, ResourceMixin)
         self.assertEqual(resource.name, 'resource')
         self.assertEqual(resource.depends, '')
         self.assertTrue(resource.directory.endswith('/webresource'))
@@ -38,18 +49,14 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
         self.assertEqual(resource.mergeable, False)
-        self.assertEqual(resource.include, True)
+        self.assertEqual(resource.crossorigin, None)
+        self.assertEqual(resource.referrerpolicy, None)
+        self.assertEqual(resource.type_, None)
         self.assertTrue(resource._config is wr.config)
         self.assertEqual(
             repr(resource),
             '<Resource name="resource", depends="", path="/" mergeable=False>'
         )
-
-        def include():
-            return False
-
-        resource = Resource('resource', resource='res.ext', include=include)
-        self.assertFalse(resource.include)
 
         config = ResourceConfig()
         resource = Resource(
@@ -73,36 +80,48 @@ class TestWebresource(unittest.TestCase):
         resource = Resource('resource', resource='res.ext', group=group)
         self.assertTrue(group.members[0] is resource)
 
-    def test_JSResource(self):
-        js = wr.JSResource('js_res', resource='res.js')
-        self.assertEqual(js._type, 'js')
+    def test_ScriptResource(self):
+        script = wr.ScriptResource('js_res', resource='res.js')
+        self.assertEqual(script.async_, None)
+        self.assertEqual(script.defer, None)
+        self.assertEqual(script.integrity, None)
+        self.assertEqual(script.nomodule, None)
         self.assertEqual(
-            repr(js),
-            '<JSResource name="js_res", depends="", path="/" mergeable=False>'
+            repr(script),
+            '<ScriptResource name="js_res", depends="", path="/" mergeable=False>'
         )
 
-    def test_CSSResource(self):
-        css = wr.CSSResource('css_res', resource='res.css')
-        self.assertEqual(css._type, 'css')
+    def test_LinkResource(self):
+        link = wr.LinkResource('ln_res', resource='res.ext')
+        self.assertEqual(link.hreflang, None)
+        self.assertEqual(link.media, None)
+        self.assertEqual(link.rel, None)
+        self.assertEqual(link.sizes, None)
+        self.assertEqual(link.title, None)
         self.assertEqual(
-            repr(css),
-            '<CSSResource name="css_res", depends="", path="/" mergeable=False>'
+            repr(link),
+            '<LinkResource name="ln_res", depends="", path="/" mergeable=False>'
+        )
+
+    def test_StyleResource(self):
+        style = wr.StyleResource('css_res', resource='res.css')
+        self.assertIsInstance(style, wr.LinkResource)
+        self.assertEqual(style.type_, 'text/css')
+        self.assertEqual(style.media, 'all')
+        self.assertEqual(style.rel, 'stylesheet')
+        self.assertEqual(
+            repr(style),
+            '<StyleResource name="css_res", depends="", path="/" mergeable=False>'
         )
 
     def test_ResourceGroup(self):
         group = wr.ResourceGroup('groupname')
+        self.assertIsInstance(group, ResourceMixin)
         self.assertEqual(group.name, 'groupname')
         self.assertEqual(group.members, [])
-        self.assertEqual(group.include, True)
         self.assertEqual(repr(group), '<ResourceGroup name="groupname">')
 
-        def include():
-            return False
-
-        group = wr.ResourceGroup('groupname', include=include)
-        self.assertFalse(group.include)
-
-        res = wr.JSResource('name', resource='name.js')
+        res = wr.ScriptResource('name', resource='name.js')
         group.add(res)
         other = wr.ResourceGroup('other')
         group.add(other)
