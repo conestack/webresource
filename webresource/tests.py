@@ -11,21 +11,11 @@ class TestWebresource(unittest.TestCase):
 
     def test_ResourceConfig(self):
         config = ResourceConfig()
-
+        self.assertIsInstance(wr.config, ResourceConfig)
         self.assertFalse(config.debug)
+
         config.debug = True
         self.assertTrue(config.debug)
-
-        self.assertEqual(config._merge_dir, None)
-        self.assertTrue(config.merge_dir.startswith('/tmp'))
-        self.assertEqual(config.merge_dir, config._merge_dir)
-        shutil.rmtree(config._merge_dir)
-
-        config.merge_dir = '/tmp/foo'
-        self.assertEqual(config._merge_dir, '/tmp/foo')
-        self.assertEqual(config.merge_dir, '/tmp/foo')
-
-        self.assertIsInstance(wr.config, ResourceConfig)
 
     def test_ResourceMixin(self):
         mixin = ResourceMixin(True)
@@ -48,14 +38,13 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.path, '/')
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
-        self.assertEqual(resource.mergeable, False)
         self.assertEqual(resource.crossorigin, None)
         self.assertEqual(resource.referrerpolicy, None)
         self.assertEqual(resource.type_, None)
         self.assertTrue(resource._config is wr.config)
         self.assertEqual(
             repr(resource),
-            '<Resource name="resource", depends="", path="/" mergeable=False>'
+            '<Resource name="resource", depends="", path="/">'
         )
 
         config = ResourceConfig()
@@ -88,7 +77,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(script.nomodule, None)
         self.assertEqual(
             repr(script),
-            '<ScriptResource name="js_res", depends="", path="/" mergeable=False>'
+            '<ScriptResource name="js_res", depends="", path="/">'
         )
 
     def test_LinkResource(self):
@@ -100,7 +89,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(link.title, None)
         self.assertEqual(
             repr(link),
-            '<LinkResource name="ln_res", depends="", path="/" mergeable=False>'
+            '<LinkResource name="ln_res", depends="", path="/">'
         )
 
     def test_StyleResource(self):
@@ -111,7 +100,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(style.rel, 'stylesheet')
         self.assertEqual(
             repr(style),
-            '<StyleResource name="css_res", depends="", path="/" mergeable=False>'
+            '<StyleResource name="css_res", depends="", path="/">'
         )
 
     def test_ResourceGroup(self):
@@ -138,7 +127,7 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceCircularDependencyError([resource])
         self.assertEqual(str(err),
             'Resources define circular dependencies: '
-            '[<Resource name="res1", depends="res2", path="/" mergeable=False>]'
+            '[<Resource name="res1", depends="res2", path="/">]'
         )
 
     def test_ResourceMissingDependencyError(self):
@@ -146,7 +135,7 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceMissingDependencyError(resource)
         self.assertEqual(str(err),
             'Resource define missing dependency: '
-            '<Resource name="res", depends="missing", path="/" mergeable=False>'
+            '<Resource name="res", depends="missing", path="/">'
         )
 
     def test_ResourceResolver__flat_resources(self):

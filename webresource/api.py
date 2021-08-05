@@ -13,19 +13,8 @@ class ResourceConfig(object):
     """Config singleton for web resources.
     """
 
-    def __init__(self, _merge_dir=None):
+    def __init__(self):
         self.debug = False
-        self._merge_dir = _merge_dir
-
-    @property
-    def merge_dir(self):
-        if not self._merge_dir:
-            self._merge_dir = tempfile.mkdtemp()
-        return self._merge_dir
-
-    @merge_dir.setter
-    def merge_dir(self, path):
-        self._merge_dir = path
 
 
 config = ResourceConfig()
@@ -50,9 +39,9 @@ class Resource(ResourceMixin):
     """
 
     def __init__(self, name, depends='', directory=None, path='/',
-                 resource=None, compressed=None, mergeable=False,
-                 include=True, group=None, crossorigin=None, referrerpolicy=None,
-                 type_=None, _config=config):
+                 resource=None, compressed=None, include=True, group=None,
+                 crossorigin=None, referrerpolicy=None, type_=None,
+                 _config=config):
         """Create resource.
 
         :param name: The resource unique name.
@@ -61,8 +50,6 @@ class Resource(ResourceMixin):
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
         :param compressed: Optional compressed version of resource file.
-        :param mergeable: Flag whether it's safe to merge resource with other
-        resources.
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
@@ -85,7 +72,6 @@ class Resource(ResourceMixin):
         self.compressed = compressed
         if group:
             group.add(self)
-        self.mergeable = mergeable
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
@@ -107,13 +93,12 @@ class Resource(ResourceMixin):
 
     def __repr__(self):
         return (
-            '<{} name="{}", depends="{}", path="{}" mergeable={}>'
+            '<{} name="{}", depends="{}", path="{}">'
         ).format(
             self.__class__.__name__,
             self.name,
             self.depends,
-            self.path,
-            self.mergeable
+            self.path
         )
 
 
@@ -122,10 +107,9 @@ class ScriptResource(Resource):
     """
 
     def __init__(self, name, depends='', directory=None, path='/',
-                 resource=None, compressed=None, mergeable=False,
-                 include=True, group=None, crossorigin=None,
-                 referrerpolicy=None, type_=None, async_=None, defer=None,
-                 integrity=None, nomodule=None, _config=config):
+                 resource=None, compressed=None, include=True, group=None,
+                 crossorigin=None, referrerpolicy=None, type_=None, async_=None,
+                 defer=None, integrity=None, nomodule=None, _config=config):
         """Create script resource.
 
         :param name: The resource unique name.
@@ -134,8 +118,6 @@ class ScriptResource(Resource):
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
         :param compressed: Optional compressed version of resource file.
-        :param mergeable: Flag whether it's safe to merge resource with other
-        resources.
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
@@ -154,9 +136,9 @@ class ScriptResource(Resource):
         """
         super(ScriptResource, self).__init__(
             name, depends=depends, directory=directory, path=path,
-            resource=resource, compressed=compressed, mergeable=mergeable,
-            include=include, group=group, crossorigin=crossorigin,
-            referrerpolicy=referrerpolicy, type_=type_, _config=_config
+            resource=resource, compressed=compressed, include=include,
+            group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_=type_, _config=_config
         )
         self.async_ = async_
         self.defer = defer
@@ -169,11 +151,10 @@ class LinkResource(Resource):
     """
 
     def __init__(self, name, depends='', directory=None, path='/',
-                 resource=None, compressed=None, mergeable=False,
-                 include=True, group=None, crossorigin=None,
-                 referrerpolicy=None, type_=None, hreflang=None,
-                 media=None, rel=None, sizes=None,
-                 title=None, _config=config):
+                 resource=None, compressed=None, include=True, group=None,
+                 crossorigin=None, referrerpolicy=None, type_=None,
+                 hreflang=None, media=None, rel=None, sizes=None, title=None,
+                 _config=config):
         """Create link resource.
 
         :param name: The resource unique name.
@@ -182,8 +163,6 @@ class LinkResource(Resource):
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
         :param compressed: Optional compressed version of resource file.
-        :param mergeable: Flag whether it's safe to merge resource with other
-        resources.
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
@@ -203,9 +182,9 @@ class LinkResource(Resource):
         """
         super(LinkResource, self).__init__(
             name, depends=depends, directory=directory, path=path,
-            resource=resource, compressed=compressed, mergeable=mergeable,
-            include=include, group=group, crossorigin=crossorigin,
-            referrerpolicy=referrerpolicy, type_=type_, _config=_config
+            resource=resource, compressed=compressed, include=include,
+            group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_=type_, _config=_config
         )
         self.hreflang = hreflang
         self.media = media
@@ -219,9 +198,8 @@ class StyleResource(LinkResource):
     """
 
     def __init__(self, name, depends='', directory=None, path='/',
-                 resource=None, compressed=None, mergeable=False,
-                 include=True, group=None, crossorigin=None,
-                 referrerpolicy=None, hreflang=None,
+                 resource=None, compressed=None, include=True, group=None,
+                 crossorigin=None, referrerpolicy=None, hreflang=None,
                  media='all', rel='stylesheet', sizes=None,
                  title=None, _config=config):
         """Create link resource.
@@ -232,8 +210,6 @@ class StyleResource(LinkResource):
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
         :param compressed: Optional compressed version of resource file.
-        :param mergeable: Flag whether it's safe to merge resource with other
-        resources.
         :param include: Flag or callback function returning a flag whether to
         include the resource.
         :param group: Optional resource group instance.
@@ -250,10 +226,10 @@ class StyleResource(LinkResource):
         """
         super(StyleResource, self).__init__(
             name, depends=depends, directory=directory, path=path,
-            resource=resource, compressed=compressed, mergeable=mergeable,
-            include=include, group=group, crossorigin=crossorigin,
-            referrerpolicy=referrerpolicy, type_='text/css', hreflang=hreflang,
-            media=media, rel=rel, sizes=None, title=title, _config=_config
+            resource=resource, compressed=compressed, include=include,
+            group=group, crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_='text/css', hreflang=hreflang, media=media, rel=rel,
+            sizes=None, title=title, _config=_config
         )
 
 
