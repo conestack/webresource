@@ -198,6 +198,44 @@ class TestWebresource(unittest.TestCase):
             '<Resource name="res", depends="missing", path="">'
         )
 
+    def test_ResourceResolver__update_paths(self):
+        res1 = Resource('res1', resource='res1.ext')
+        res2 = Resource('res2', resource='res2.ext', path='path')
+
+        resolver = wr.ResourceResolver([res1, res2])
+        resolver._update_paths()
+        self.assertEqual(res1.path, '')
+        self.assertEqual(res2.path, 'path')
+
+        group = wr.ResourceGroup('group')
+        group.add(res1)
+        group.add(res2)
+
+        resolver = wr.ResourceResolver([group])
+        resolver._update_paths()
+        self.assertEqual(res1.path, '')
+        self.assertEqual(res2.path, 'path')
+
+        group.path = 'other'
+        resolver._update_paths()
+        self.assertEqual(res1.path, 'other')
+        self.assertEqual(res2.path, 'path')
+
+        group1 = wr.ResourceGroup('group1', path='group1')
+
+        group2 = wr.ResourceGroup('group2', group=group1)
+        res1 = Resource('res1', resource='res1.ext', group=group2)
+        res2 = Resource('res2', resource='res2.ext', path='path', group=group2)
+
+        group3 = wr.ResourceGroup('group3', group=group1, path='group3')
+        res3 = Resource('res3', resource='res3.ext', group=group3)
+
+        resolver = wr.ResourceResolver([group1])
+        resolver._update_paths()
+        self.assertEqual(res1.path, 'group1')
+        self.assertEqual(res2.path, 'path')
+        self.assertEqual(res3.path, 'group3')
+
     def test_ResourceResolver__flat_resources(self):
         self.assertRaises(ValueError, wr.ResourceResolver, object())
 

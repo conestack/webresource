@@ -289,15 +289,21 @@ class ResourceGroup(ResourceMixin):
     """A resource group.
     """
 
-    def __init__(self, name, include=True):
+    def __init__(self, name, include=True, path='', group=None):
         """Create resource group.
 
         :param name: The resource group name.
         :param include: Flag or callback function returning a flag whether to
         include the resource.
+        :param path: Optional URL path for HTML tag link creation. Gets set on
+        resources inside this group if set and resource path not set.
+        :param group: Optional resource group instance.
         """
         super(ResourceGroup, self).__init__(include)
         self.name = name
+        self.path = path
+        if group:
+            group.add(self)
         self._members = []
 
     @property
@@ -368,6 +374,15 @@ class ResourceResolver(object):
                 )
         self.members = members
 
+    def _update_paths(self, members=None, path=''):
+        if members is None:
+            members = self.members
+        for member in members:
+            if path and not member.path:
+                member.path = path
+            if isinstance(member, ResourceGroup):
+                self._update_paths(members=member.members, path=member.path)
+
     def _flat_resources(self, members=None):
         if members is None:
             members = self.members
@@ -382,6 +397,7 @@ class ResourceResolver(object):
         return resources
 
     def resolve(self):
+        self._update_paths()
         resources = self._flat_resources()
         names = [res.name for res in resources]
         counter = Counter(names)
