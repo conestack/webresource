@@ -1,7 +1,7 @@
 from collections import Counter
-from webresource.api import Resource
-from webresource.api import ResourceConfig
-from webresource.api import ResourceMixin
+from webresource._api import Resource
+from webresource._api import ResourceConfig
+from webresource._api import ResourceMixin
 import shutil
 import unittest
 import webresource as wr
