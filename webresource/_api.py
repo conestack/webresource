@@ -91,6 +91,28 @@ class Resource(ResourceMixin):
         """
         return os.path.join(self.directory, self.file_name)
 
+    def resource_url(self, base_url):
+        path = self.path.strip('/')
+        if path:
+            parts = [base_url.strip('/'), path, self.file_name]
+        else:
+            parts = [base_url.strip('/'), self.file_name]
+        return u'/'.join(parts)
+
+    def render(self, base_url):
+        raise NotImplementedError('Abstract resource not implements ``render``')
+
+    def _render_tag(self, tag, closing_tag, **attrs):
+        attrs_ = list()
+        for name, val in attrs.items():
+            if val is None:
+                continue
+            attrs_.append(u'{0}="{1}"'.format(name, val))
+        attrs_ = u' {0}'.format(u' '.join(sorted(attrs_)))
+        if not closing_tag:
+            return u'<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
+        return u'<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
+
     def __repr__(self):
         return (
             '<{} name="{}", depends="{}", path="{}">'
@@ -145,6 +167,18 @@ class ScriptResource(Resource):
         self.integrity = integrity
         self.nomodule = nomodule
 
+    def render(self, base_url):
+        return self._render_tag('script', True, **{
+            'src': self.resource_url(base_url),
+            'crossorigin': self.crossorigin,
+            'referrerpolicy': self.referrerpolicy,
+            'type': self.type_,
+            'async': self.async_,
+            'defer': self.defer,
+            'integrity': self.integrity,
+            'nomodule': self.nomodule
+        })
+
 
 class LinkResource(Resource):
     """A Link Resource.
@@ -191,6 +225,19 @@ class LinkResource(Resource):
         self.rel = rel
         self.sizes = sizes
         self.title = title
+
+    def render(self, base_url):
+        return self._render_tag('link', False, **{
+            'href': self.resource_url(base_url),
+            'crossorigin': self.crossorigin,
+            'referrerpolicy': self.referrerpolicy,
+            'type': self.type_,
+            'hreflang': self.hreflang,
+            'media': self.media,
+            'rel': self.rel,
+            'sizes': self.sizes,
+            'title': self.title
+        })
 
 
 class StyleResource(LinkResource):
@@ -374,26 +421,7 @@ class ResourceRenderer(object):
         self.base_url = base_url
         self._config = _config
 
-    def _tag(self, tag, closing_tag, **attrs):
-        attrs_ = list()
-        for attr_name in attrs:
-            attrs_.append(u'{0}="{1}"'.format(attr_name, attrs[attr_name]))
-        attrs_ = u' {0}'.format(u' '.join(sorted(attrs_)))
-        if not closing_tag:
-            return u'<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
-        return u'<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
-
-    def _js_tag(self, path):
-        return '<script src="{}{}"></script>\n'.format(self.base_url, path)
-
-    def _css_tag(self, path, media='all'):
-        return (
-            '<link href="{}{}" rel="stylesheet" type="text/css" media="{}">\n'
-        ).format(self.base_url, path, media)
-
-    def _hashed_name(self, names, ext):
-        hash_ = hashlib.sha256(''.join(names).encode('utf-8')).hexdigest()
-        return u'{}.{}'.format(hash_, ext)
-
     def render(self):
-        pass
+        return u'\n'.join([
+            res.render(self.base_url) for res in self.resolver.resolve()
+        ])

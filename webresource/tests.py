@@ -69,6 +69,37 @@ class TestWebresource(unittest.TestCase):
         resource = Resource('resource', resource='res.ext', group=group)
         self.assertTrue(group.members[0] is resource)
 
+        rendered = resource._render_tag('tag', False, foo='bar', baz=None)
+        self.assertEqual(rendered, u'<tag foo="bar" />')
+
+        rendered = resource._render_tag('tag', True, foo='bar', baz=None)
+        self.assertEqual(rendered, u'<tag foo="bar"></tag>')
+
+        self.assertRaises(NotImplementedError, resource.render, '')
+
+        resource = Resource('resource', resource='res.ext', path='/')
+        resource_url = resource.resource_url('https://tld.org/')
+        self.assertEqual(resource_url, 'https://tld.org/res.ext')
+
+        resource = Resource('resource', resource='res.ext', path='/resources')
+        resource_url = resource.resource_url('https://tld.org')
+        self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
+
+        config = ResourceConfig()
+        resource = Resource(
+            'resource',
+            resource='res.ext',
+            compressed='res.min',
+            path='/resources',
+            _config=config
+        )
+        resource_url = resource.resource_url('https://tld.org')
+        self.assertEqual(resource_url, 'https://tld.org/resources/res.min')
+
+        config.debug = True
+        resource_url = resource.resource_url('https://tld.org')
+        self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
+
     def test_ScriptResource(self):
         script = wr.ScriptResource('js_res', resource='res.js')
         self.assertEqual(script.async_, None)
@@ -79,9 +110,18 @@ class TestWebresource(unittest.TestCase):
             repr(script),
             '<ScriptResource name="js_res", depends="", path="/">'
         )
+        self.assertEqual(
+            script.render('https://tld.org'),
+            '<script src="https://tld.org/res.js"></script>'
+        )
+        script.type_ = 'module'
+        self.assertEqual(
+            script.render('https://tld.org'),
+            '<script src="https://tld.org/res.js" type="module"></script>'
+        )
 
     def test_LinkResource(self):
-        link = wr.LinkResource('ln_res', resource='res.ext')
+        link = wr.LinkResource('icon_res', resource='icon.png')
         self.assertEqual(link.hreflang, None)
         self.assertEqual(link.media, None)
         self.assertEqual(link.rel, None)
@@ -89,7 +129,13 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(link.title, None)
         self.assertEqual(
             repr(link),
-            '<LinkResource name="ln_res", depends="", path="/">'
+            '<LinkResource name="icon_res", depends="", path="/">'
+        )
+        link.rel = 'icon'
+        link.type_ = 'image/png'
+        self.assertEqual(
+            link.render('https://tld.org'),
+            '<link href="https://tld.org/icon.png" rel="icon" type="image/png" />'
         )
 
     def test_StyleResource(self):
@@ -102,6 +148,10 @@ class TestWebresource(unittest.TestCase):
             repr(style),
             '<StyleResource name="css_res", depends="", path="/">'
         )
+        self.assertEqual(style.render('https://tld.org'), (
+            '<link href="https://tld.org/res.css" media="all" '
+                  'rel="stylesheet" type="text/css" />'
+        ))
 
     def test_ResourceGroup(self):
         group = wr.ResourceGroup('groupname')
@@ -205,30 +255,44 @@ class TestWebresource(unittest.TestCase):
         resolver = wr.ResourceResolver([res1, res2])
         self.assertRaises(wr.ResourceMissingDependencyError, resolver.resolve)
 
-    def test_ResourceRenderer__js_tag(self):
-        renderer = wr.ResourceRenderer(None)
-        self.assertEqual(
-            renderer._js_tag('/js/res.js'),
-            '<script src="https://tld.org/js/res.js"></script>\n'
+    def test_ResourceRenderer(self):
+        resources = wr.ResourceGroup('resource')
+        icon = wr.LinkResource(
+            'icon',
+            resource='icon.png',
+            group=resources,
+            rel='icon',
+            type_='image/png'
         )
-
-    def test_ResourceRenderer__css_tag(self):
-        renderer = wr.ResourceRenderer(None)
-        self.assertEqual(renderer._css_tag('/css/res.css'), (
-            '<link href="https://tld.org/css/res.css" '
-            'rel="stylesheet" type="text/css" media="all">\n'
-        ))
-        self.assertEqual(renderer._css_tag('/css/res.css', media='print'), (
-            '<link href="https://tld.org/css/res.css" '
-            'rel="stylesheet" type="text/css" media="print">\n'
-        ))
-
-    def test_ResourceRenderer__hashed_name(self):
-        renderer = wr.ResourceRenderer(None)
-        self.assertEqual(
-            renderer._hashed_name(['res1', 'res2'], 'ext'),
-            '74d837be6666f7c2e24ec75bac34a798bdfd01d4d3550ac29b2a9392e7eef1e3.ext'
+        style = wr.StyleResource('css', resource='styles.css', group=resources)
+        script = wr.ScriptResource(
+            'js',
+            resource='script.js',
+            compressed='script.min.js',
+            group=resources
         )
+        resolver = wr.ResourceResolver(resources)
+        renderer = wr.ResourceRenderer(resolver, base_url='https://example.com')
+
+        rendered = renderer.render()
+        self.assertEqual(rendered, (
+            '<link href="https://example.com/icon.png" '
+                  'rel="icon" type="image/png" />\n'
+            '<link href="https://example.com/styles.css" media="all" '
+                  'rel="stylesheet" type="text/css" />\n'
+            '<script src="https://example.com/script.min.js"></script>'
+        ))
+
+        wr.config.debug = True
+        rendered = renderer.render()
+        self.assertEqual(rendered, (
+            '<link href="https://example.com/icon.png" '
+                  'rel="icon" type="image/png" />\n'
+            '<link href="https://example.com/styles.css" media="all" '
+                  'rel="stylesheet" type="text/css" />\n'
+            '<script src="https://example.com/script.js"></script>'
+        ))
+        wr.config.debug = False
 
 
 if __name__ == '__main__':
