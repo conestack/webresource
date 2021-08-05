@@ -32,7 +32,7 @@ class Resource(ResourceMixin):
     """A web resource.
     """
 
-    def __init__(self, name, depends='', directory=None, path='/',
+    def __init__(self, name, depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, type_=None):
         """Create resource.
@@ -57,10 +57,7 @@ class Resource(ResourceMixin):
         super(Resource, self).__init__(include)
         self.name = name
         self.depends = depends
-        if not directory:
-            module = inspect.getmodule(inspect.currentframe().f_back)
-            directory = os.path.dirname(os.path.abspath(module.__file__))
-        self.directory = directory
+        self.directory = self._resolve_directory(directory)
         self.path = path
         self.resource = resource
         self.compressed = compressed
@@ -109,6 +106,17 @@ class Resource(ResourceMixin):
             return u'<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
         return u'<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
 
+    def _resolve_directory(self, directory):
+        if not directory:
+            directory = self._module_directory()
+        elif directory.startswith('.'):
+            directory = os.path.join(self._module_directory(), directory)
+        return os.path.abspath(directory)
+
+    def _module_directory(self):
+        module = inspect.getmodule(inspect.currentframe().f_back)
+        return os.path.dirname(os.path.abspath(module.__file__))
+
     def __repr__(self):
         return (
             '<{} name="{}", depends="{}", path="{}">'
@@ -124,7 +132,7 @@ class ScriptResource(Resource):
     """A Javascript resource.
     """
 
-    def __init__(self, name, depends='', directory=None, path='/',
+    def __init__(self, name, depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, type_=None,
                  async_=None, defer=None, integrity=None, nomodule=None):
@@ -181,7 +189,7 @@ class LinkResource(Resource):
     """A Link Resource.
     """
 
-    def __init__(self, name, depends='', directory=None, path='/',
+    def __init__(self, name, depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, type_=None,
                  hreflang=None, media=None, rel=None, sizes=None, title=None):
@@ -241,7 +249,7 @@ class StyleResource(LinkResource):
     """A Stylesheet Resource.
     """
 
-    def __init__(self, name, depends='', directory=None, path='/',
+    def __init__(self, name, depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
                  media='all', rel='stylesheet', sizes=None, title=None):

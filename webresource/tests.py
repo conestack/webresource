@@ -31,14 +31,14 @@ class TestWebresource(unittest.TestCase):
         self.assertFalse(mixin.include)
 
     def test_Resource(self):
-        self.assertRaises(ValueError, Resource, 'resource')
+        self.assertRaises(ValueError, Resource, 'res')
 
-        resource = Resource('resource', resource='res.ext')
+        resource = Resource('res', resource='res.ext')
         self.assertIsInstance(resource, ResourceMixin)
-        self.assertEqual(resource.name, 'resource')
+        self.assertEqual(resource.name, 'res')
         self.assertEqual(resource.depends, '')
         self.assertTrue(resource.directory.endswith('/webresource'))
-        self.assertEqual(resource.path, '/')
+        self.assertEqual(resource.path, '')
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
         self.assertEqual(resource.crossorigin, None)
@@ -47,10 +47,16 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.type_, None)
         self.assertEqual(
             repr(resource),
-            '<Resource name="resource", depends="", path="/">'
+            '<Resource name="res", depends="", path="">'
         )
 
-        resource = Resource('resource', directory='/dir', resource='res.ext')
+        resource = Resource('res', directory='./dir', resource='res.ext')
+        self.assertTrue(resource.directory.endswith('/webresource/dir'))
+
+        resource = Resource('res', directory='./dir/../other', resource='res.ext')
+        self.assertTrue(resource.directory.endswith('/webresource/other'))
+
+        resource = Resource('res', directory='/dir', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
         self.assertEqual(resource.file_path, '/dir/res.ext')
 
@@ -64,7 +70,7 @@ class TestWebresource(unittest.TestCase):
         wr.config.development = False
 
         group = wr.ResourceGroup('group')
-        resource = Resource('resource', resource='res.ext', group=group)
+        resource = Resource('res', resource='res.ext', group=group)
         self.assertTrue(group.members[0] is resource)
 
         rendered = resource._render_tag('tag', False, foo='bar', baz=None)
@@ -75,16 +81,20 @@ class TestWebresource(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, resource.render, '')
 
-        resource = Resource('resource', resource='res.ext', path='/')
+        resource = Resource('res', resource='res.ext')
         resource_url = resource.resource_url('https://tld.org/')
         self.assertEqual(resource_url, 'https://tld.org/res.ext')
 
-        resource = Resource('resource', resource='res.ext', path='/resources')
+        resource = Resource('res', resource='res.ext', path='/resources')
+        resource_url = resource.resource_url('https://tld.org')
+        self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
+
+        resource = Resource('res', resource='res.ext', path='resources')
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
 
         resource = Resource(
-            'resource',
+            'res',
             resource='res.ext',
             compressed='res.min',
             path='/resources'
@@ -96,7 +106,7 @@ class TestWebresource(unittest.TestCase):
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
 
-        resource = Resource('resource', url='https://ext.org/res')
+        resource = Resource('res', url='https://ext.org/res')
         resource_url = resource.resource_url('')
         self.assertEqual(resource_url, 'https://ext.org/res')
 
@@ -108,7 +118,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(script.nomodule, None)
         self.assertEqual(
             repr(script),
-            '<ScriptResource name="js_res", depends="", path="/">'
+            '<ScriptResource name="js_res", depends="", path="">'
         )
         self.assertEqual(
             script.render('https://tld.org'),
@@ -129,7 +139,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(link.title, None)
         self.assertEqual(
             repr(link),
-            '<LinkResource name="icon_res", depends="", path="/">'
+            '<LinkResource name="icon_res", depends="", path="">'
         )
         link.rel = 'icon'
         link.type_ = 'image/png'
@@ -146,7 +156,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(style.rel, 'stylesheet')
         self.assertEqual(
             repr(style),
-            '<StyleResource name="css_res", depends="", path="/">'
+            '<StyleResource name="css_res", depends="", path="">'
         )
         self.assertEqual(style.render('https://tld.org'), (
             '<link href="https://tld.org/res.css" media="all" '
@@ -177,7 +187,7 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceCircularDependencyError([resource])
         self.assertEqual(str(err),
             'Resources define circular dependencies: '
-            '[<Resource name="res1", depends="res2", path="/">]'
+            '[<Resource name="res1", depends="res2", path="">]'
         )
 
     def test_ResourceMissingDependencyError(self):
@@ -185,7 +195,7 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceMissingDependencyError(resource)
         self.assertEqual(str(err),
             'Resource define missing dependency: '
-            '<Resource name="res", depends="missing", path="/">'
+            '<Resource name="res", depends="missing", path="">'
         )
 
     def test_ResourceResolver__flat_resources(self):
@@ -256,7 +266,7 @@ class TestWebresource(unittest.TestCase):
         self.assertRaises(wr.ResourceMissingDependencyError, resolver.resolve)
 
     def test_ResourceRenderer(self):
-        resources = wr.ResourceGroup('resource')
+        resources = wr.ResourceGroup('res')
         icon = wr.LinkResource(
             'icon',
             resource='icon.png',

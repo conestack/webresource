@@ -38,5 +38,8 @@ setup(
     zip_safe=True,
     install_requires=[
         'setuptools'
-    ]
+    ],
+    extras_require=dict(
+        docs=['Sphinx']
+    )
 )
