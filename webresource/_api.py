@@ -1,12 +1,6 @@
 from collections import Counter
-import hashlib
 import inspect
-import logging
 import os
-import tempfile
-
-
-logger = logging.getLogger('webresource')
 
 
 class ResourceConfig(object):
