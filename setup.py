@@ -8,7 +8,7 @@ def read_file(name):
         return f.read()
 
 
-version = '1.0b1.dev0'
+version = '1.0b1'
 shortdesc = "Deliver web resources"
 longdesc = '\n\n'.join([read_file(name) for name in [
     'README.rst',
@@ -37,15 +37,9 @@ setup(
     license='Simplified BSD',
     packages=['webresource'],
     zip_safe=True,
-    install_requires=[
-        'setuptools'
-    ],
+    install_requires=['setuptools'],
     extras_require=dict(
-        test=[
-            'coverage'
-        ],
-        docs=[
-            'Sphinx'
-        ]
+        test=['coverage'],
+        docs=['Sphinx']
     )
 )
