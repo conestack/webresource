@@ -1,10 +1,10 @@
 Changelog
 =========
 
-1.0b3 (unreleased)
+1.0b3 (2021-08-06)
 ------------------
 
-- No changes yet.
+- Add remaining missing rst files to release.
 
 
 1.0b2 (2021-08-06)
