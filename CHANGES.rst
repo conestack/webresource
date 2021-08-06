@@ -1,10 +1,10 @@
 Changelog
 =========
 
-1.0b2 (unreleased)
+1.0b2 (2021-08-06)
 ------------------
 
-- No changes yet.
+- Add missing ``docs/source/overview.rst`` to release.
 
 
 1.0b1 (2021-08-06)
