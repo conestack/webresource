@@ -1,0 +1,29 @@
+dl.py dl.field-list {
+    display: block;
+}
+dl.py dl.field-list dt {
+    padding-bottom: 8px;
+}
+dl.py dl.field-list dt,
+dl.py dl.field-list dd {
+    padding-left: 0;
+    padding-right: 0;
+}
+dl.py.class {
+    margin-bottom: 20px;
+}
+dl.py.class > dt {
+    margin-bottom: 10px;
+}
+dl.py.method {
+    margin-bottom: 20px;
+}
+dl.py.method > dt {
+    margin-bottom: 8px;
+}
+dl.py.property {
+    margin-bottom: 20px;
+}
+dl.py.property > dt {
+    margin-bottom: 8px;
+}

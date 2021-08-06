@@ -1,5 +1,6 @@
 from webresource._api import config
 from webresource._api import LinkResource
+from webresource._api import Resource
 from webresource._api import ResourceCircularDependencyError
 from webresource._api import ResourceConflictError
 from webresource._api import ResourceGroup

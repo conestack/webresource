@@ -35,7 +35,7 @@ class Resource(ResourceMixin):
     def __init__(self, name, depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, type_=None):
-        """Create resource.
+        """Base class for resources.
 
         :param name: The resource unique name.
         :param depends: Optional name of dependency resource.
@@ -44,12 +44,12 @@ class Resource(ResourceMixin):
         :param resource: Resource file.
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
-        include the resource.
+            include the resource.
         :param group: Optional resource group instance.
         :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
         :param referrerpolicy: Specifies which referrer information to send when
-        fetching the resource.
+            fetching the resource.
         :param type_: Specifies the media type of the resource.
         """
         if resource is None and url is None:
@@ -83,6 +83,10 @@ class Resource(ResourceMixin):
         return os.path.join(self.directory, self.file_name)
 
     def resource_url(self, base_url):
+        """Create URL for resource.
+
+        :param base_url: The base URL to create the URL resource.
+        """
         if self.url is not None:
             return self.url
         path = self.path.strip('/')
@@ -93,6 +97,11 @@ class Resource(ResourceMixin):
         return u'/'.join(parts)
 
     def render(self, base_url):
+        """Renders the resource HTML tag. must be implemented on subclass.
+
+        :param base_url: The base URL to create the URL resource.
+        :raise NotImplementedError: Method is abstract.
+        """
         raise NotImplementedError('Abstract resource not implements ``render``')
 
     def _render_tag(self, tag, closing_tag, **attrs):
@@ -145,21 +154,21 @@ class ScriptResource(Resource):
         :param resource: Resource file.
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
-        include the resource.
+            include the resource.
         :param group: Optional resource group instance.
         :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
         :param referrerpolicy: Specifies which referrer information to send when
-        fetching the resource.
+            fetching the resource.
         :param type_: Specifies the media type of the resource.
         :param async_: Specifies that the script is executed asynchronously
-        (only for external scripts)
+            (only for external scripts)
         :param defer: Specifies that the script is executed when the page has
-        finished parsing (only for external scripts).
+            finished parsing (only for external scripts).
         :param integrity: Allows a browser to check the fetched script to ensure
-        that the code is never loaded if the source has been manipulated.
+            that the code is never loaded if the source has been manipulated.
         :param nomodule: Allows a browser to check the fetched script to ensure
-        that the code is never loaded if the source has been manipulated.
+            that the code is never loaded if the source has been manipulated.
         """
         super(ScriptResource, self).__init__(
             name, depends=depends, directory=directory, path=path,
@@ -173,6 +182,10 @@ class ScriptResource(Resource):
         self.nomodule = nomodule
 
     def render(self, base_url):
+        """Renders the resource HTML ``script`` tag.
+
+        :param base_url: The base URL to create the URL resource.
+        """
         return self._render_tag('script', True, **{
             'src': self.resource_url(base_url),
             'crossorigin': self.crossorigin,
@@ -202,21 +215,21 @@ class LinkResource(Resource):
         :param resource: Resource file.
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
-        include the resource.
+            include the resource.
         :param group: Optional resource group instance.
         :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
         :param referrerpolicy: Specifies which referrer information to send when
-        fetching the resource.
+            fetching the resource.
         :param type_: Specifies the media type of the resource.
         :param hreflang: Specifies the language of the text in the linked
-        document.
+            document.
         :param media: Specifies on what device the linked document will be
-        displayed.
+            displayed.
         :param rel: Required. Specifies the relationship between the current
-        document and the linked document.
+            document and the linked document.
         :param sizes: Specifies the size of the linked resource. Only for
-        rel="icon".
+            rel="icon".
         :param title: Defines a preferred or an alternate stylesheet.
         """
         super(LinkResource, self).__init__(
@@ -232,6 +245,10 @@ class LinkResource(Resource):
         self.title = title
 
     def render(self, base_url):
+        """Renders the resource HTML ``link`` tag.
+
+        :param base_url: The base URL to create the URL resource.
+        """
         return self._render_tag('link', False, **{
             'href': self.resource_url(base_url),
             'crossorigin': self.crossorigin,
@@ -262,18 +279,18 @@ class StyleResource(LinkResource):
         :param resource: Resource file.
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
-        include the resource.
+            include the resource.
         :param group: Optional resource group instance.
         :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
         :param referrerpolicy: Specifies which referrer information to send when
-        fetching the resource.
+            fetching the resource.
         :param hreflang: Specifies the language of the text in the linked
-        document.
+            document.
         :param media: Specifies on what device the linked document will be
-        displayed. Defaults to "all".
+            displayed. Defaults to "all".
         :param rel: Specifies the relationship between the current document and
-        the linked document. Defaults to "stylesheet".
+            the linked document. Defaults to "stylesheet".
         :param title: Defines a preferred or an alternate stylesheet.
         """
         super(StyleResource, self).__init__(
@@ -294,9 +311,9 @@ class ResourceGroup(ResourceMixin):
 
         :param name: The resource group name.
         :param include: Flag or callback function returning a flag whether to
-        include the resource.
+            include the resource.
         :param path: Optional URL path for HTML tag link creation. Gets set on
-        resources inside this group if set and resource path not set.
+            resources inside this group if set and resource path not set.
         :param group: Optional resource group instance.
         """
         super(ResourceGroup, self).__init__(include)
@@ -308,12 +325,14 @@ class ResourceGroup(ResourceMixin):
 
     @property
     def members(self):
+        """List of group members."""
         return self._members
 
     def add(self, member):
         """Add member to resource group.
 
         :param member: Either ``ResourceGroup`` or ``Resource`` instance.
+        :raise ValueError: Invalid member given.
         """
         if not isinstance(member, (ResourceGroup, Resource)):
             raise ValueError(
@@ -330,6 +349,8 @@ class ResourceGroup(ResourceMixin):
 
 
 class ResourceConflictError(ValueError):
+    """Multiple resources declared with the same name.
+    """
 
     def __init__(self, counter):
         conflicting = list()
@@ -341,6 +362,8 @@ class ResourceConflictError(ValueError):
 
 
 class ResourceCircularDependencyError(ValueError):
+    """Resources define circular dependencies.
+    """
 
     def __init__(self, resources):
         msg = 'Resources define circular dependencies: {}'.format(resources)
@@ -348,6 +371,8 @@ class ResourceCircularDependencyError(ValueError):
 
 
 class ResourceMissingDependencyError(ValueError):
+    """Resource depends on a missing resource.
+    """
 
     def __init__(self, resources):
         msg = 'Resource define missing dependency: {}'.format(resources)
@@ -362,7 +387,7 @@ class ResourceResolver(object):
         """Create resource resolver.
 
         :param members: Either single or list of ``Resource`` or
-        ``ResourceGroup`` instances.
+            ``ResourceGroup`` instances.
         """
         if not isinstance(members, (list, tuple)):
             members = [members]
@@ -397,6 +422,13 @@ class ResourceResolver(object):
         return resources
 
     def resolve(self):
+        """Return all resources from members as flat list ordered by
+        dependencies.
+
+        :raise ResourceConflictError: Resource list contains conflicting names
+        :raise ResourceMissingDependencyError: Dependency resource not included
+        :raise ResourceCircularDependencyError: Circular dependency defined.
+        """
         self._update_paths()
         resources = self._flat_resources()
         names = [res.name for res in resources]
@@ -442,6 +474,8 @@ class ResourceRenderer(object):
         self.base_url = base_url
 
     def render(self):
+        """Render resources.
+        """
         return u'\n'.join([
             res.render(self.base_url) for res in self.resolver.resolve()
         ])

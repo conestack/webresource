@@ -12,6 +12,7 @@ version = '1.0b1.dev0'
 shortdesc = "Deliver web resources"
 longdesc = '\n\n'.join([read_file(name) for name in [
     'README.rst',
+    os.path.join('docs', 'source', 'overview.rst'),
     'CHANGES.rst',
     'LICENSE.rst'
 ]])
@@ -40,6 +41,11 @@ setup(
         'setuptools'
     ],
     extras_require=dict(
-        docs=['Sphinx']
+        test=[
+            'coverage'
+        ],
+        docs=[
+            'Sphinx'
+        ]
     )
 )
