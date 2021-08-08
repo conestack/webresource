@@ -4,7 +4,11 @@ Changelog
 1.0b4 (unreleased)
 ------------------
 
-- No changes yet.
+- Change ``path`` cascading behavior. Path set on ``ResourceGroup`` always takes
+  precedence over its members paths.
+
+- ``include``property of ``Resource`` and ``ResourceGroup`` can be set from
+  outside.
 
 
 1.0b3 (2021-08-06)

@@ -18,8 +18,11 @@ class ResourceMixin(object):
     """Mixin for ``Resource`` and ``ResourceGroup``.
     """
 
-    def __init__(self, include):
-        self._include = include
+    def __init__(self, name='', path='', include=True):
+        self.name = name
+        self.path = path
+        self.include = include
+        self.resolved_path = ''
 
     @property
     def include(self):
@@ -27,12 +30,26 @@ class ResourceMixin(object):
             return self._include()
         return self._include
 
+    @include.setter
+    def include(self, include):
+        self._include = include
+
+    @property
+    def resolved_path(self):
+        if self._resolved_path:
+            return self._resolved_path
+        return self.path
+
+    @resolved_path.setter
+    def resolved_path(self, path):
+        self._resolved_path = path
+
 
 class Resource(ResourceMixin):
     """A web resource.
     """
 
-    def __init__(self, name, depends='', directory=None, path='',
+    def __init__(self, name='', depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, type_=None):
         """Base class for resources.
@@ -54,11 +71,9 @@ class Resource(ResourceMixin):
         """
         if resource is None and url is None:
             raise ValueError('Either resource or url must be given')
-        super(Resource, self).__init__(include)
-        self.name = name
+        super(Resource, self).__init__(name=name, path=path, include=include)
         self.depends = depends
         self.directory = self._resolve_directory(directory)
-        self.path = path
         self.resource = resource
         self.compressed = compressed
         if group:
@@ -89,7 +104,7 @@ class Resource(ResourceMixin):
         """
         if self.url is not None:
             return self.url
-        path = self.path.strip('/')
+        path = self.resolved_path.strip('/')
         if path:
             parts = [base_url.strip('/'), path, self.file_name]
         else:
@@ -128,12 +143,11 @@ class Resource(ResourceMixin):
 
     def __repr__(self):
         return (
-            '<{} name="{}", depends="{}", path="{}">'
+            '<{} name="{}", depends="{}">'
         ).format(
             self.__class__.__name__,
             self.name,
-            self.depends,
-            self.path
+            self.depends
         )
 
 
@@ -141,7 +155,7 @@ class ScriptResource(Resource):
     """A Javascript resource.
     """
 
-    def __init__(self, name, depends='', directory=None, path='',
+    def __init__(self, name='', depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, type_=None,
                  async_=None, defer=None, integrity=None, nomodule=None):
@@ -171,7 +185,7 @@ class ScriptResource(Resource):
             that the code is never loaded if the source has been manipulated.
         """
         super(ScriptResource, self).__init__(
-            name, depends=depends, directory=directory, path=path,
+            name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
             group=group, url=url, crossorigin=crossorigin,
             referrerpolicy=referrerpolicy, type_=type_
@@ -202,7 +216,7 @@ class LinkResource(Resource):
     """A Link Resource.
     """
 
-    def __init__(self, name, depends='', directory=None, path='',
+    def __init__(self, name='', depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, type_=None,
                  hreflang=None, media=None, rel=None, sizes=None, title=None):
@@ -233,7 +247,7 @@ class LinkResource(Resource):
         :param title: Defines a preferred or an alternate stylesheet.
         """
         super(LinkResource, self).__init__(
-            name, depends=depends, directory=directory, path=path,
+            name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
             group=group, url=url, crossorigin=crossorigin,
             referrerpolicy=referrerpolicy, type_=type_
@@ -266,7 +280,7 @@ class StyleResource(LinkResource):
     """A Stylesheet Resource.
     """
 
-    def __init__(self, name, depends='', directory=None, path='',
+    def __init__(self, name='', depends='', directory=None, path='',
                  resource=None, compressed=None, include=True, group=None,
                  url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
                  media='all', rel='stylesheet', sizes=None, title=None):
@@ -294,7 +308,7 @@ class StyleResource(LinkResource):
         :param title: Defines a preferred or an alternate stylesheet.
         """
         super(StyleResource, self).__init__(
-            name, depends=depends, directory=directory, path=path,
+            name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
             group=group, url=url, crossorigin=crossorigin,
             referrerpolicy=referrerpolicy, type_='text/css', hreflang=hreflang,
@@ -306,19 +320,17 @@ class ResourceGroup(ResourceMixin):
     """A resource group.
     """
 
-    def __init__(self, name, include=True, path='', group=None):
+    def __init__(self, name='', path='', include=True, group=None):
         """Create resource group.
 
         :param name: The resource group name.
+        :param path: Optional URL path for HTML tag link creation. Takes
+            precedence over group members paths.
         :param include: Flag or callback function returning a flag whether to
-            include the resource.
-        :param path: Optional URL path for HTML tag link creation. Gets set on
-            resources inside this group if set and resource path not set.
+            include the resource group.
         :param group: Optional resource group instance.
         """
-        super(ResourceGroup, self).__init__(include)
-        self.name = name
-        self.path = path
+        super(ResourceGroup, self).__init__(name=name, path=path, include=include)
         if group:
             group.add(self)
         self._members = []
@@ -399,14 +411,17 @@ class ResourceResolver(object):
                 )
         self.members = members
 
-    def _update_paths(self, members=None, path=''):
+    def _resolve_paths(self, members=None, path=''):
         if members is None:
             members = self.members
         for member in members:
-            if path and not member.path:
-                member.path = path
+            if path:
+                member.resolved_path = path
             if isinstance(member, ResourceGroup):
-                self._update_paths(members=member.members, path=member.path)
+                self._resolve_paths(
+                    members=member.members,
+                    path=member.resolved_path
+                )
 
     def _flat_resources(self, members=None):
         if members is None:
@@ -429,7 +444,7 @@ class ResourceResolver(object):
         :raise ResourceMissingDependencyError: Dependency resource not included
         :raise ResourceCircularDependencyError: Circular dependency defined.
         """
-        self._update_paths()
+        self._resolve_paths()
         resources = self._flat_resources()
         names = [res.name for res in resources]
         counter = Counter(names)

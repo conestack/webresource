@@ -23,7 +23,7 @@ Declare a script:
     )
 
 ``name`` is a unique identifier for the resource. ``directory`` defines the
-location n the file system where the resource can be found. ``resource`` is
+location in the file system where the resource can be found. ``resource`` is
 the default resource file corresponding to this declaration. ``compressed`` is
 the minified version of the resource, which gets considered if ``webresource``
 is used in production mode. ``path`` defines the path part of the URL at which
@@ -96,7 +96,7 @@ advance.
         ...
     )
 
-Or an already declared resource can be added to a group:
+or an already declared resource can be added to a group:
 
 .. code-block:: python
 
@@ -116,14 +116,12 @@ Groups can be nested:
         group=scripts
     )
 
-A group can be used to define the path for all resources inside the group. This
-applies only if contained groups not define ``path`` on it's own:
+A group can be used to define the path for all members. The
+group path takes precedence over its members paths:
 
 .. code-block:: python
 
     scripts = wr.ResourceGroup(name='scripts', path='js')
-
-This also works for nested groups.
 
 
 Deliver resources
@@ -138,7 +136,7 @@ But it provides a renderer for the resulting resource HTML tags.
 First a ``ResourceResolver`` needs to be created knowing about the resources to
 deliver. ``members`` can be an instance or list of resources or resource groups
 
-The ``ResourceRenderer`` then is uses to create the markup.
+The ``ResourceRenderer`` then is used to create the markup.
 
 A complete example:
 
