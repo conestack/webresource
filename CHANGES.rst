@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0b4 (unreleased)
+1.0b4 (2021-08-08)
 ------------------
 
 - Change ``path`` cascading behavior. Path set on ``ResourceGroup`` always takes
