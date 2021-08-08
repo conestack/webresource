@@ -13,7 +13,7 @@ Changelog
 - Change ``path`` cascading behavior. Path set on ``ResourceGroup`` always takes
   precedence over its members paths.
 
-- ``include``property of ``Resource`` and ``ResourceGroup`` can be set from
+- ``include`` property of ``Resource`` and ``ResourceGroup`` can be set from
   outside.
 
 

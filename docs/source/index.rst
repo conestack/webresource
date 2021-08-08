@@ -14,7 +14,7 @@ Features
 - Manage dependencies between resources.
 - Grouping of resources.
 - Conditional delivery of resources.
-- Develoment and a production mode.
+- Development and a production mode.
 
 
 Contributors
@@ -22,6 +22,9 @@ Contributors
 
 - Robert Niederreiter (Author)
 
+
+Table of Contents
+-----------------
 
 .. toctree::
     :maxdepth: 3
