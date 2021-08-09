@@ -73,7 +73,7 @@ class Resource(ResourceMixin):
             raise ValueError('Either resource or url must be given')
         super(Resource, self).__init__(name=name, path=path, include=include)
         self.depends = depends
-        self.directory = self._resolve_directory(directory)
+        self.directory = directory
         self.resource = resource
         self.compressed = compressed
         if group:
@@ -82,6 +82,18 @@ class Resource(ResourceMixin):
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
+
+    @property
+    def directory(self):
+        return self._directory
+
+    @directory.setter
+    def directory(self, directory):
+        if not directory:
+            directory = self._module_directory()
+        elif directory.startswith('.'):
+            directory = os.path.join(self._module_directory(), directory)
+        self._directory = os.path.abspath(directory)
 
     @property
     def file_name(self):
@@ -129,13 +141,6 @@ class Resource(ResourceMixin):
         if not closing_tag:
             return u'<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
         return u'<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
-
-    def _resolve_directory(self, directory):
-        if not directory:
-            directory = self._module_directory()
-        elif directory.startswith('.'):
-            directory = os.path.join(self._module_directory(), directory)
-        return os.path.abspath(directory)
 
     def _module_directory(self):
         module = inspect.getmodule(inspect.currentframe().f_back)
@@ -457,7 +462,7 @@ class ResourceResolver(object):
                 ret.append(resource)
                 handled[resource.name] = resource
                 resources.remove(resource)
-            elif not resource.depends in names:
+            elif resource.depends not in names:
                 raise ResourceMissingDependencyError(resource)
         count = len(resources)
         while count > 0:

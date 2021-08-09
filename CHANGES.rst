@@ -4,7 +4,7 @@ Changelog
 1.0b5 (unreleased)
 ------------------
 
-- No changes yet.
+- Make ``Resource.directory`` a R/W property.
 
 
 1.0b4 (2021-08-08)

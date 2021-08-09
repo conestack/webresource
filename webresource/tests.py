@@ -2,7 +2,6 @@ from collections import Counter
 from webresource._api import Resource
 from webresource._api import ResourceConfig
 from webresource._api import ResourceMixin
-import shutil
 import unittest
 import webresource as wr
 
@@ -170,7 +169,7 @@ class TestWebresource(unittest.TestCase):
         )
         self.assertEqual(style.render('https://tld.org'), (
             '<link href="https://tld.org/res.css" media="all" '
-                  'rel="stylesheet" type="text/css" />'
+            'rel="stylesheet" type="text/css" />'
         ))
 
     def test_ResourceGroup(self):
@@ -195,18 +194,18 @@ class TestWebresource(unittest.TestCase):
     def test_ResourceCircularDependencyError(self):
         resource = Resource('res1', resource='res1.ext', depends='res2')
         err = wr.ResourceCircularDependencyError([resource])
-        self.assertEqual(str(err),
+        self.assertEqual(str(err), (
             'Resources define circular dependencies: '
             '[<Resource name="res1", depends="res2">]'
-        )
+        ))
 
     def test_ResourceMissingDependencyError(self):
         resource = Resource('res', resource='res.ext', depends='missing')
         err = wr.ResourceMissingDependencyError(resource)
-        self.assertEqual(str(err),
+        self.assertEqual(str(err), (
             'Resource define missing dependency: '
             '<Resource name="res", depends="missing">'
-        )
+        ))
 
     def test_ResourceResolver__resolve_paths(self):
         res1 = Resource('res1', resource='res1.ext')
@@ -328,20 +327,20 @@ class TestWebresource(unittest.TestCase):
 
     def test_ResourceRenderer(self):
         resources = wr.ResourceGroup('res', path='res')
-        icon = wr.LinkResource(
+        wr.LinkResource(
             'icon',
             resource='icon.png',
             group=resources,
             rel='icon',
             type_='image/png'
         )
-        style = wr.StyleResource('css', resource='styles.css', group=resources)
-        external = wr.StyleResource(
+        wr.StyleResource('css', resource='styles.css', group=resources)
+        wr.StyleResource(
             'ext_css',
             url='https://ext.org/styles.css',
             group=resources
         )
-        script = wr.ScriptResource(
+        wr.ScriptResource(
             'js',
             resource='script.js',
             compressed='script.min.js',
@@ -353,11 +352,11 @@ class TestWebresource(unittest.TestCase):
         rendered = renderer.render()
         self.assertEqual(rendered, (
             '<link href="https://example.com/res/icon.png" '
-                  'rel="icon" type="image/png" />\n'
+            'rel="icon" type="image/png" />\n'
             '<link href="https://example.com/res/styles.css" media="all" '
-                  'rel="stylesheet" type="text/css" />\n'
+            'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
-                  'rel="stylesheet" type="text/css" />\n'
+            'rel="stylesheet" type="text/css" />\n'
             '<script src="https://example.com/res/script.min.js"></script>'
         ))
 
@@ -365,11 +364,11 @@ class TestWebresource(unittest.TestCase):
         rendered = renderer.render()
         self.assertEqual(rendered, (
             '<link href="https://example.com/res/icon.png" '
-                  'rel="icon" type="image/png" />\n'
+            'rel="icon" type="image/png" />\n'
             '<link href="https://example.com/res/styles.css" media="all" '
-                  'rel="stylesheet" type="text/css" />\n'
+            'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
-                  'rel="stylesheet" type="text/css" />\n'
+            'rel="stylesheet" type="text/css" />\n'
             '<script src="https://example.com/res/script.js"></script>'
         ))
 
