@@ -3,6 +3,7 @@ from webresource._api import LinkResource
 from webresource._api import Resource
 from webresource._api import ResourceCircularDependencyError
 from webresource._api import ResourceConflictError
+from webresource._api import ResourceError
 from webresource._api import ResourceGroup
 from webresource._api import ResourceMissingDependencyError
 from webresource._api import ResourceRenderer

@@ -56,8 +56,14 @@ ResourceRenderer
 Exceptions
 ----------
 
+.. autoclass:: webresource::ResourceError
+    :show-inheritance:
+
 .. autoclass:: webresource::ResourceConflictError
+    :show-inheritance:
 
 .. autoclass:: webresource::ResourceCircularDependencyError
+    :show-inheritance:
 
 .. autoclass:: webresource::ResourceMissingDependencyError
+    :show-inheritance:

@@ -45,6 +45,11 @@ class ResourceMixin(object):
         self._resolved_path = path
 
 
+class ResourceError(ValueError):
+    """Resource related exception.
+    """
+
+
 class Resource(ResourceMixin):
     """A web resource.
     """
@@ -68,9 +73,10 @@ class Resource(ResourceMixin):
         :param referrerpolicy: Specifies which referrer information to send when
             fetching the resource.
         :param type_: Specifies the media type of the resource.
+        :raise ResourceError: No resource and no url given.
         """
         if resource is None and url is None:
-            raise ValueError('Either resource or url must be given')
+            raise ResourceError('Either resource or url must be given')
         super(Resource, self).__init__(name=name, path=path, include=include)
         self.depends = depends
         self.directory = directory
@@ -188,6 +194,7 @@ class ScriptResource(Resource):
             that the code is never loaded if the source has been manipulated.
         :param nomodule: Allows a browser to check the fetched script to ensure
             that the code is never loaded if the source has been manipulated.
+        :raise ResourceError: No resource and no url given.
         """
         super(ScriptResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
@@ -250,6 +257,7 @@ class LinkResource(Resource):
         :param sizes: Specifies the size of the linked resource. Only for
             rel="icon".
         :param title: Defines a preferred or an alternate stylesheet.
+        :raise ResourceError: No resource and no url given.
         """
         super(LinkResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
@@ -311,6 +319,7 @@ class StyleResource(LinkResource):
         :param rel: Specifies the relationship between the current document and
             the linked document. Defaults to "stylesheet".
         :param title: Defines a preferred or an alternate stylesheet.
+        :raise ResourceError: No resource and no url given.
         """
         super(StyleResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
@@ -349,10 +358,10 @@ class ResourceGroup(ResourceMixin):
         """Add member to resource group.
 
         :param member: Either ``ResourceGroup`` or ``Resource`` instance.
-        :raise ValueError: Invalid member given.
+        :raise ResourceError: Invalid member given.
         """
         if not isinstance(member, (ResourceGroup, Resource)):
-            raise ValueError(
+            raise ResourceError(
                 'Resource group can only contain instances '
                 'of ``ResourceGroup`` or ``Resource``'
             )
@@ -365,7 +374,7 @@ class ResourceGroup(ResourceMixin):
         )
 
 
-class ResourceConflictError(ValueError):
+class ResourceConflictError(ResourceError):
     """Multiple resources declared with the same name.
     """
 
@@ -378,7 +387,7 @@ class ResourceConflictError(ValueError):
         super(ResourceConflictError, self).__init__(msg)
 
 
-class ResourceCircularDependencyError(ValueError):
+class ResourceCircularDependencyError(ResourceError):
     """Resources define circular dependencies.
     """
 
@@ -387,7 +396,7 @@ class ResourceCircularDependencyError(ValueError):
         super(ResourceCircularDependencyError, self).__init__(msg)
 
 
-class ResourceMissingDependencyError(ValueError):
+class ResourceMissingDependencyError(ResourceError):
     """Resource depends on a missing resource.
     """
 
@@ -405,12 +414,13 @@ class ResourceResolver(object):
 
         :param members: Either single or list of ``Resource`` or
             ``ResourceGroup`` instances.
+        :raise ResourceError: Members contain invalid member.
         """
         if not isinstance(members, (list, tuple)):
             members = [members]
         for member in members:
             if not isinstance(member, (Resource, ResourceGroup)):
-                raise ValueError(
+                raise ResourceError(
                     'members can only contain instances '
                     'of ``ResourceGroup`` or ``Resource``'
                 )

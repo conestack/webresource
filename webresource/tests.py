@@ -36,7 +36,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(mixin.resolved_path, 'other')
 
     def test_Resource(self):
-        self.assertRaises(ValueError, Resource, 'res')
+        self.assertRaises(wr.ResourceError, Resource, 'res')
 
         resource = Resource('res', resource='res.ext')
         self.assertIsInstance(resource, ResourceMixin)
@@ -184,7 +184,7 @@ class TestWebresource(unittest.TestCase):
         other = wr.ResourceGroup('other')
         group.add(other)
         self.assertEqual(group.members, [res, other])
-        self.assertRaises(ValueError, group.add, object())
+        self.assertRaises(wr.ResourceError, group.add, object())
 
     def test_ResourceConflictError(self):
         counter = Counter(['a', 'b', 'b', 'c', 'c'])
@@ -259,7 +259,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(res3.resolved_path, 'group1')
 
     def test_ResourceResolver__flat_resources(self):
-        self.assertRaises(ValueError, wr.ResourceResolver, object())
+        self.assertRaises(wr.ResourceError, wr.ResourceResolver, object())
 
         res1 = Resource('res1', resource='res1.ext')
         resolver = wr.ResourceResolver(res1)
