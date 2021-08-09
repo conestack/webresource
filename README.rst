@@ -9,16 +9,16 @@ webresource
     :target: https://pypi.python.org/pypi/webresource
     :alt: Number of PyPI downloads
 
-**A resource registry for you Web Application.**
+**A resource registry for web applications.**
 
-Webresource is a small library for defining and registering resources
-(primarily Javascript and CSS files) to deliver in your Web Application.
+Webresource is a compact Python library to declare resources
+(primarily Javascript and CSS files) for delivery in your web application.
 
 
 Features
 --------
 
-- Register web resources via python.
+- Declare web resources via python.
 - Manage dependencies between resources.
 - Grouping of resources.
 - Conditional delivery of resources.

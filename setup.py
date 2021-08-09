@@ -8,7 +8,7 @@ def read_file(name):
 
 
 version = '1.0b5.dev0'
-shortdesc = "Deliver web resources"
+shortdesc = "A resource registry for web applications."
 longdesc = '\n\n'.join([read_file(name) for name in [
     'README.rst',
     os.path.join('docs', 'source', 'overview.rst'),

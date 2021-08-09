@@ -1,16 +1,16 @@
 webresource documentation
 =========================
 
-A resource registry for you Web Application.
+**A resource registry for web applications.**
 
-``webresource`` is a small library for defining and registering resources
-(primarily Javascript and CSS files) to deliver in your Web Application.
+Webresource is a compact Python library to declare resources
+(primarily Javascript and CSS files) for delivery in your web application.
 
 
 Features
 --------
 
-- Register web resources via python.
+- Declare web resources via python.
 - Manage dependencies between resources.
 - Grouping of resources.
 - Conditional delivery of resources.
@@ -21,6 +21,12 @@ Contributors
 ------------
 
 - Robert Niederreiter (Author)
+
+
+Copyright
+---------
+
+- Copyright (c) 2021 Cone Contributors
 
 
 Table of Contents
