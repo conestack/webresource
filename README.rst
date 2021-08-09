@@ -1,3 +1,6 @@
+webresource
+===========
+
 .. image:: https://img.shields.io/pypi/v/webresource.svg
     :target: https://pypi.python.org/pypi/webresource
     :alt: Latest PyPI version
@@ -5,10 +8,6 @@
 .. image:: https://img.shields.io/pypi/dm/webresource.svg
     :target: https://pypi.python.org/pypi/webresource
     :alt: Number of PyPI downloads
-
-
-webresource
-===========
 
 **A resource registry for you Web Application.**
 
