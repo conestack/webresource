@@ -22,7 +22,7 @@ copyright = '2021, Cone Contributors'
 author = 'Cone Contributors'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0b4'
+release = '1.0b5'
 
 
 # -- General configuration ---------------------------------------------------
