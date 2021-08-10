@@ -17,12 +17,6 @@ Features
 - Development and a production mode.
 
 
-Contributors
-------------
-
-- Robert Niederreiter (Author)
-
-
 Source Code
 -----------
 
@@ -34,6 +28,12 @@ Copyright
 ---------
 
 - Copyright (c) 2021 Cone Contributors
+
+
+Contributors
+------------
+
+- Robert Niederreiter (Author)
 
 
 Table of Contents

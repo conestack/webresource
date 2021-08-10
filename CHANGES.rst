@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0b6 (unreleased)
+1.0b6 (2021-08-10)
 ------------------
 
 - Raise explicit ``ResourceError`` instead of generic ``ValueError``.

@@ -123,6 +123,21 @@ group path takes precedence over its members paths:
 
     scripts = wr.ResourceGroup(name='scripts', path='js')
 
+To control whether an entire group should be included, define an ``include``
+callback funtion or flag.
+
+.. code-block:: python
+
+    def include_group():
+        # Compute whether to include resource group here.
+        return True
+
+    group = wr.ResourceGroup(
+        name='group',
+        include=include_group,
+        ...
+    )
+
 
 Deliver resources
 -----------------
@@ -134,7 +149,7 @@ to the browser at the defined paths.
 But it provides a renderer for the resulting resource HTML tags.
 
 First a ``ResourceResolver`` needs to be created knowing about the resources to
-deliver. ``members`` can be an instance or list of resources or resource groups
+deliver. ``members`` can be an instance or list of resources or resource groups.
 
 The ``ResourceRenderer`` then is used to create the markup.
 
