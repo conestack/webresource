@@ -192,8 +192,8 @@ class ScriptResource(Resource):
             finished parsing (only for external scripts).
         :param integrity: Allows a browser to check the fetched script to ensure
             that the code is never loaded if the source has been manipulated.
-        :param nomodule: Allows a browser to check the fetched script to ensure
-            that the code is never loaded if the source has been manipulated.
+        :param nomodule: Specifies that the script should not be executed in
+            browsers supporting ES2015 modules.
         :raise ResourceError: No resource and no url given.
         """
         super(ScriptResource, self).__init__(
