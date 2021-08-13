@@ -40,7 +40,7 @@ class TestWebresource(unittest.TestCase):
     def test_Resource(self):
         self.assertRaises(wr.ResourceError, Resource, 'res')
 
-        resource = Resource('res', resource='res.ext')
+        resource = Resource(name='res', resource='res.ext')
         self.assertIsInstance(resource, ResourceMixin)
         self.assertEqual(resource.name, 'res')
         self.assertEqual(resource.depends, '')
@@ -48,7 +48,10 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.path, '')
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
-        self.assertEqual(resource.crossorigin, None)
+        self.assertEqual(resource.include, True)
+        self.assertEqual(resource.hash_, False)
+        self.assertEqual(resource.hash_algorithm, 'sha384')
+        self.assertEqual(resource.url, None)
         self.assertEqual(resource.crossorigin, None)
         self.assertEqual(resource.referrerpolicy, None)
         self.assertEqual(resource.type_, None)
@@ -57,13 +60,17 @@ class TestWebresource(unittest.TestCase):
             '<Resource name="res", depends="">'
         )
 
-        resource = Resource('res', directory='./dir', resource='res.ext')
+        resource = Resource(name='res', directory='./dir', resource='res.ext')
         self.assertTrue(resource.directory.endswith('/webresource/dir'))
 
-        resource = Resource('res', directory='./dir/../other', resource='res.ext')
+        resource = Resource(
+            name='res',
+            directory='./dir/../other',
+            resource='res.ext'
+        )
         self.assertTrue(resource.directory.endswith('/webresource/other'))
 
-        resource = Resource('res', directory='/dir', resource='res.ext')
+        resource = Resource(name='res', directory='/dir', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
         self.assertEqual(resource.file_path, '/dir/res.ext')
 
@@ -76,8 +83,8 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.file_path, '/dir/res.ext')
         wr.config.development = False
 
-        group = wr.ResourceGroup('group')
-        resource = Resource('res', resource='res.ext', group=group)
+        group = wr.ResourceGroup(name='group')
+        resource = Resource(name='res', resource='res.ext', group=group)
         self.assertTrue(group.members[0] is resource)
 
         rendered = resource._render_tag('tag', False, foo='bar', baz=None)
@@ -88,15 +95,15 @@ class TestWebresource(unittest.TestCase):
 
         self.assertRaises(NotImplementedError, resource.render, '')
 
-        resource = Resource('res', resource='res.ext')
+        resource = Resource(name='res', resource='res.ext')
         resource_url = resource.resource_url('https://tld.org/')
         self.assertEqual(resource_url, 'https://tld.org/res.ext')
 
-        resource = Resource('res', resource='res.ext', path='/resources')
+        resource = Resource(name='res', resource='res.ext', path='/resources')
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
 
-        resource = Resource('res', resource='res.ext', path='resources')
+        resource = Resource(name='res', resource='res.ext', path='resources')
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
 
@@ -105,7 +112,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource_url, 'https://tld.org/other/res.ext')
 
         resource = Resource(
-            'res',
+            name='res',
             resource='res.ext',
             compressed='res.min',
             path='/resources'
@@ -117,12 +124,13 @@ class TestWebresource(unittest.TestCase):
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
 
-        resource = Resource('res', url='https://ext.org/res')
+        resource = Resource(name='res', url='https://ext.org/res')
         resource_url = resource.resource_url('')
         self.assertEqual(resource_url, 'https://ext.org/res')
+        wr.config.development = False
 
     def test_ScriptResource(self):
-        script = wr.ScriptResource('js_res', resource='res.js')
+        script = wr.ScriptResource(name='js_res', resource='res.js')
         self.assertEqual(script.async_, None)
         self.assertEqual(script.defer, None)
         self.assertEqual(script.integrity, None)
@@ -142,7 +150,7 @@ class TestWebresource(unittest.TestCase):
         )
 
     def test_LinkResource(self):
-        link = wr.LinkResource('icon_res', resource='icon.png')
+        link = wr.LinkResource(name='icon_res', resource='icon.png')
         self.assertEqual(link.hreflang, None)
         self.assertEqual(link.media, None)
         self.assertEqual(link.rel, None)
@@ -160,7 +168,7 @@ class TestWebresource(unittest.TestCase):
         )
 
     def test_StyleResource(self):
-        style = wr.StyleResource('css_res', resource='res.css')
+        style = wr.StyleResource(name='css_res', resource='res.css')
         self.assertIsInstance(style, wr.LinkResource)
         self.assertEqual(style.type_, 'text/css')
         self.assertEqual(style.media, 'all')
@@ -175,15 +183,15 @@ class TestWebresource(unittest.TestCase):
         ))
 
     def test_ResourceGroup(self):
-        group = wr.ResourceGroup('groupname')
+        group = wr.ResourceGroup(name='groupname')
         self.assertIsInstance(group, ResourceMixin)
         self.assertEqual(group.name, 'groupname')
         self.assertEqual(group.members, [])
         self.assertEqual(repr(group), '<ResourceGroup name="groupname">')
 
-        res = wr.ScriptResource('name', resource='name.js')
+        res = wr.ScriptResource(name='name', resource='name.js')
         group.add(res)
-        other = wr.ResourceGroup('other')
+        other = wr.ResourceGroup(name='other')
         group.add(other)
         self.assertEqual(group.members, [res, other])
         self.assertRaises(wr.ResourceError, group.add, object())
@@ -194,7 +202,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(str(err), 'Conflicting resource names: [\'b\', \'c\']')
 
     def test_ResourceCircularDependencyError(self):
-        resource = Resource('res1', resource='res1.ext', depends='res2')
+        resource = Resource(name='res1', resource='res1.ext', depends='res2')
         err = wr.ResourceCircularDependencyError([resource])
         self.assertEqual(str(err), (
             'Resources define circular dependencies: '
@@ -202,7 +210,7 @@ class TestWebresource(unittest.TestCase):
         ))
 
     def test_ResourceMissingDependencyError(self):
-        resource = Resource('res', resource='res.ext', depends='missing')
+        resource = Resource(name='res', resource='res.ext', depends='missing')
         err = wr.ResourceMissingDependencyError(resource)
         self.assertEqual(str(err), (
             'Resource define missing dependency: '
@@ -210,15 +218,15 @@ class TestWebresource(unittest.TestCase):
         ))
 
     def test_ResourceResolver__resolve_paths(self):
-        res1 = Resource('res1', resource='res1.ext')
-        res2 = Resource('res2', resource='res2.ext', path='path')
+        res1 = Resource(name='res1', resource='res1.ext')
+        res2 = Resource(name='res2', resource='res2.ext', path='path')
 
         resolver = wr.ResourceResolver([res1, res2])
         resolver._resolve_paths()
         self.assertEqual(res1.resolved_path, '')
         self.assertEqual(res2.resolved_path, 'path')
 
-        group = wr.ResourceGroup('group')
+        group = wr.ResourceGroup(name='group')
         group.add(res1)
         group.add(res2)
 
@@ -232,27 +240,32 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(res1.resolved_path, 'other')
         self.assertEqual(res2.resolved_path, 'other')
 
-        group1 = wr.ResourceGroup('group1')
+        group1 = wr.ResourceGroup(name='group1')
 
-        group2 = wr.ResourceGroup('group2', path='group2', group=group1)
-        res1 = Resource('res1', resource='res1.ext', group=group2)
+        group2 = wr.ResourceGroup(name='group2', path='group2', group=group1)
+        res1 = Resource(name='res1', resource='res1.ext', group=group2)
 
-        group3 = wr.ResourceGroup('group3', path='group3', group=group1)
-        res2 = Resource('res2', resource='res2.ext', group=group3)
+        group3 = wr.ResourceGroup(name='group3', path='group3', group=group1)
+        res2 = Resource(name='res2', resource='res2.ext', group=group3)
 
         resolver = wr.ResourceResolver([group1])
         resolver._resolve_paths()
         self.assertEqual(res1.resolved_path, 'group2')
         self.assertEqual(res2.resolved_path, 'group3')
 
-        group1 = wr.ResourceGroup('group1', path='group1')
+        group1 = wr.ResourceGroup(name='group1', path='group1')
 
-        group2 = wr.ResourceGroup('group2', group=group1)
-        res1 = Resource('res1', resource='res1.ext', group=group2)
-        res2 = Resource('res2', resource='res2.ext', path='path', group=group2)
+        group2 = wr.ResourceGroup(name='group2', group=group1)
+        res1 = Resource(name='res1', resource='res1.ext', group=group2)
+        res2 = Resource(
+            name='res2',
+            resource='res2.ext',
+            path='path',
+            group=group2
+        )
 
-        group3 = wr.ResourceGroup('group3', path='group3', group=group1)
-        res3 = Resource('res3', resource='res3.ext', group=group3)
+        group3 = wr.ResourceGroup(name='group3', path='group3', group=group1)
+        res3 = Resource(name='res3', resource='res3.ext', group=group3)
 
         resolver = wr.ResourceResolver([group1])
         resolver._resolve_paths()
@@ -263,25 +276,25 @@ class TestWebresource(unittest.TestCase):
     def test_ResourceResolver__flat_resources(self):
         self.assertRaises(wr.ResourceError, wr.ResourceResolver, object())
 
-        res1 = Resource('res1', resource='res1.ext')
+        res1 = Resource(name='res1', resource='res1.ext')
         resolver = wr.ResourceResolver(res1)
         self.assertEqual(resolver.members, [res1])
         self.assertEqual(resolver._flat_resources(), [res1])
 
-        res2 = Resource('res2', resource='res2.ext')
+        res2 = Resource(name='res2', resource='res2.ext')
         resolver = wr.ResourceResolver([res1, res2])
         self.assertEqual(resolver.members, [res1, res2])
         self.assertEqual(resolver._flat_resources(), [res1, res2])
 
-        res3 = Resource('res3', resource='res3.ext')
+        res3 = Resource(name='res3', resource='res3.ext')
 
-        group1 = wr.ResourceGroup('group1')
+        group1 = wr.ResourceGroup(name='group1')
         group1.add(res1)
 
-        group2 = wr.ResourceGroup('group2')
+        group2 = wr.ResourceGroup(name='group2')
         group2.add(res2)
 
-        group3 = wr.ResourceGroup('group3')
+        group3 = wr.ResourceGroup(name='group3')
         group3.add(res3)
         group3.add(group2)
 
@@ -297,14 +310,14 @@ class TestWebresource(unittest.TestCase):
 
     def test_ResourceResolver_resolve(self):
         resolver = wr.ResourceResolver([
-            Resource('res', resource='res.ext'),
-            Resource('res', resource='res.ext')
+            Resource(name='res', resource='res.ext'),
+            Resource(name='res', resource='res.ext')
         ])
         self.assertRaises(wr.ResourceConflictError, resolver.resolve)
 
-        res1 = Resource('res1', resource='res1.ext', depends='res2')
-        res2 = Resource('res2', resource='res2.ext', depends='res3')
-        res3 = Resource('res3', resource='res3.ext')
+        res1 = Resource(name='res1', resource='res1.ext', depends='res2')
+        res2 = Resource(name='res2', resource='res2.ext', depends='res3')
+        res3 = Resource(name='res3', resource='res3.ext')
 
         resolver = wr.ResourceResolver([res1, res2, res3])
         self.assertEqual(resolver.resolve(), [res3, res2, res1])
@@ -315,14 +328,14 @@ class TestWebresource(unittest.TestCase):
         resolver = wr.ResourceResolver([res1, res3, res2])
         self.assertEqual(resolver.resolve(), [res3, res2, res1])
 
-        res1 = Resource('res1', resource='res1.ext', depends='res2')
-        res2 = Resource('res2', resource='res2.ext', depends='res1')
+        res1 = Resource(name='res1', resource='res1.ext', depends='res2')
+        res2 = Resource(name='res2', resource='res2.ext', depends='res1')
 
         resolver = wr.ResourceResolver([res1, res2])
         self.assertRaises(wr.ResourceCircularDependencyError, resolver.resolve)
 
-        res1 = Resource('res1', resource='res1.ext', depends='res2')
-        res2 = Resource('res2', resource='res2.ext', depends='missing')
+        res1 = Resource(name='res1', resource='res1.ext', depends='res2')
+        res2 = Resource(name='res2', resource='res2.ext', depends='missing')
 
         resolver = wr.ResourceResolver([res1, res2])
         self.assertRaises(wr.ResourceMissingDependencyError, resolver.resolve)
@@ -330,20 +343,20 @@ class TestWebresource(unittest.TestCase):
     def test_ResourceRenderer(self):
         resources = wr.ResourceGroup('res', path='res')
         wr.LinkResource(
-            'icon',
+            name='icon',
             resource='icon.png',
             group=resources,
             rel='icon',
             type_='image/png'
         )
-        wr.StyleResource('css', resource='styles.css', group=resources)
+        wr.StyleResource(name='css', resource='styles.css', group=resources)
         wr.StyleResource(
-            'ext_css',
+            name='ext_css',
             url='https://ext.org/styles.css',
             group=resources
         )
         wr.ScriptResource(
-            'js',
+            name='js',
             resource='script.js',
             compressed='script.min.js',
             group=resources

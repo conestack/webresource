@@ -169,17 +169,17 @@ A complete example:
     css = wr.StyleResource(name='css', resource='styles.css')
 
     ext_css = wr.StyleResource(
-        'ext_css',
+        name='ext_css',
         url='https://ext.org/styles.css'
     )
 
     script = wr.ScriptResource(
-        'script',
+        name='script',
         resource='script.js',
         compressed='script.min.js'
     )
 
-    resources = wr.ResourceGroup('resources', path='res')
+    resources = wr.ResourceGroup(name='resources', path='res')
     resources.add(icon)
     resources.add(css)
     resources.add(ext_css)
