@@ -1,4 +1,6 @@
 from collections import Counter
+import base64
+import hashlib
 import inspect
 import os
 
@@ -53,10 +55,16 @@ class ResourceError(ValueError):
 class Resource(ResourceMixin):
     """A web resource.
     """
+    _hash_algorithms = dict(
+        sha256=hashlib.sha256,
+        sha384=hashlib.sha384,
+        sha512=hashlib.sha512
+    )
 
     def __init__(self, name='', depends='', directory=None, path='',
-                 resource=None, compressed=None, include=True, group=None,
-                 url=None, crossorigin=None, referrerpolicy=None, type_=None):
+                 resource=None, compressed=None, include=True, hash_=False,
+                 hash_algorithm='sha384', group=None, url=None,
+                 crossorigin=None, referrerpolicy=None, type_=None):
         """Base class for resources.
 
         :param name: The resource unique name.
@@ -67,6 +75,10 @@ class Resource(ResourceMixin):
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
             include the resource.
+        :param hash_: Flag whether to render resource URL with hash. Has no
+            effect if ``url`` is given.
+        :param hash_algorithm: Name of the hashing algorithm. Either 'sha256',
+            'sha384' or 'sha512'. Defaults to 'sha384'.
         :param group: Optional resource group instance.
         :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
@@ -82,6 +94,8 @@ class Resource(ResourceMixin):
         self.directory = directory
         self.resource = resource
         self.compressed = compressed
+        self.hash_ = hash_
+        self.hash_algorithm = hash_algorithm
         if group:
             group.add(self)
         self.url = url
@@ -115,6 +129,23 @@ class Resource(ResourceMixin):
         """
         return os.path.join(self.directory, self.file_name)
 
+    @property
+    def file_data(self):
+        """File content of resource depending on operation mode.
+        """
+        with open(self.file_path) as f:
+            return f.read()
+
+    @property
+    def file_hash(self):
+        """Hash of resource file content.
+        """
+        if not config.development and hasattr(self, '_file_hash'):
+            return self._file_hash
+        hash_func = self._hash_algorithms[self.hash_algorithm]
+        self._file_hash = base64.b64encode(hash_func(self.file_data).digest())
+        return self._file_hash
+
     def resource_url(self, base_url):
         """Create URL for resource.
 
@@ -127,7 +158,10 @@ class Resource(ResourceMixin):
             parts = [base_url.strip('/'), path, self.file_name]
         else:
             parts = [base_url.strip('/'), self.file_name]
-        return u'/'.join(parts)
+        url = u'/'.join(parts)
+        if self.hash_:
+            url = u'{}#{}'.format(url, self.file_hash)
+        return url
 
     def render(self, base_url):
         """Renders the resource HTML tag. must be implemented on subclass.
@@ -167,8 +201,9 @@ class ScriptResource(Resource):
     """
 
     def __init__(self, name='', depends='', directory=None, path='',
-                 resource=None, compressed=None, include=True, group=None,
-                 url=None, crossorigin=None, referrerpolicy=None, type_=None,
+                 resource=None, compressed=None, include=True, hash_=False,
+                 hash_algorithm='sha384', group=None, url=None,
+                 crossorigin=None, referrerpolicy=None, type_=None,
                  async_=None, defer=None, integrity=None, nomodule=None):
         """Create script resource.
 
@@ -180,6 +215,10 @@ class ScriptResource(Resource):
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
             include the resource.
+        :param hash_: Flag whether to render resource URL with hash. Has no
+            effect if ``url`` is given.
+        :param hash_algorithm: Name of the hashing algorithm. Either 'sha256',
+            'sha384' or 'sha512'. Defaults to 'sha384'.
         :param group: Optional resource group instance.
         :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
@@ -199,8 +238,8 @@ class ScriptResource(Resource):
         super(ScriptResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            group=group, url=url, crossorigin=crossorigin,
-            referrerpolicy=referrerpolicy, type_=type_
+            hash_=hash_, hash_algorithm=hash_algorithm, group=group, url=url,
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
         )
         self.async_ = async_
         self.defer = defer
@@ -229,8 +268,9 @@ class LinkResource(Resource):
     """
 
     def __init__(self, name='', depends='', directory=None, path='',
-                 resource=None, compressed=None, include=True, group=None,
-                 url=None, crossorigin=None, referrerpolicy=None, type_=None,
+                 resource=None, compressed=None, include=True, hash_=False,
+                 hash_algorithm='sha384', group=None, url=None,
+                 crossorigin=None, referrerpolicy=None, type_=None,
                  hreflang=None, media=None, rel=None, sizes=None, title=None):
         """Create link resource.
 
@@ -242,6 +282,10 @@ class LinkResource(Resource):
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
             include the resource.
+        :param hash_: Flag whether to render resource URL with hash. Has no
+            effect if ``url`` is given.
+        :param hash_algorithm: Name of the hashing algorithm. Either 'sha256',
+            'sha384' or 'sha512'. Defaults to 'sha384'.
         :param group: Optional resource group instance.
         :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
@@ -262,8 +306,8 @@ class LinkResource(Resource):
         super(LinkResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            group=group, url=url, crossorigin=crossorigin,
-            referrerpolicy=referrerpolicy, type_=type_
+            hash_=hash_, hash_algorithm=hash_algorithm, group=group, url=url,
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
         )
         self.hreflang = hreflang
         self.media = media
@@ -294,8 +338,9 @@ class StyleResource(LinkResource):
     """
 
     def __init__(self, name='', depends='', directory=None, path='',
-                 resource=None, compressed=None, include=True, group=None,
-                 url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
+                 resource=None, compressed=None, include=True, hash_=False,
+                 hash_algorithm='sha384', group=None, url=None,
+                 crossorigin=None, referrerpolicy=None, hreflang=None,
                  media='all', rel='stylesheet', sizes=None, title=None):
         """Create link resource.
 
@@ -307,6 +352,10 @@ class StyleResource(LinkResource):
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
             include the resource.
+        :param hash_: Flag whether to render resource URL with hash. Has no
+            effect if ``url`` is given.
+        :param hash_algorithm: Name of the hashing algorithm. Either 'sha256',
+            'sha384' or 'sha512'. Defaults to 'sha384'.
         :param group: Optional resource group instance.
         :param url: Optional resource URL to use for external resources.
         :param crossorigin: Sets the mode of the request to an HTTP CORS Request.
@@ -324,9 +373,10 @@ class StyleResource(LinkResource):
         super(StyleResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            group=group, url=url, crossorigin=crossorigin,
-            referrerpolicy=referrerpolicy, type_='text/css', hreflang=hreflang,
-            media=media, rel=rel, sizes=None, title=title
+            hash_=hash_, hash_algorithm=hash_algorithm, group=group, url=url,
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_='text/css', hreflang=hreflang, media=media, rel=rel,
+            sizes=None, title=title
         )
 
 

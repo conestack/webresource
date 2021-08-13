@@ -4,7 +4,12 @@ Changelog
 1.0b7 (unreleased)
 ------------------
 
-- No changes yet.
+- Add ``hash_`` and ``hash_algorithm`` keyword arguments to ``Resource``,
+  ``ScriptResource``, ``LinkResource`` and ``FileResource``.
+
+- Add ``Resource.file_hash`` property.
+
+- Add ``Resource.file_data`` property.
 
 
 1.0b6 (2021-08-10)
