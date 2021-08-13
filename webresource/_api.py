@@ -133,7 +133,7 @@ class Resource(ResourceMixin):
     def file_data(self):
         """File content of resource depending on operation mode.
         """
-        with open(self.file_path) as f:
+        with open(self.file_path, 'rb') as f:
             return f.read()
 
     @property
@@ -143,8 +143,9 @@ class Resource(ResourceMixin):
         if not config.development and hasattr(self, '_file_hash'):
             return self._file_hash
         hash_func = self._hash_algorithms[self.hash_algorithm]
-        self._file_hash = base64.b64encode(hash_func(self.file_data).digest())
-        return self._file_hash
+        hash_ = base64.b64encode(hash_func(self.file_data).digest()).decode()
+        self._file_hash = hash_
+        return hash_
 
     def resource_url(self, base_url):
         """Create URL for resource.

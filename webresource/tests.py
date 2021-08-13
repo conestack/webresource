@@ -1,11 +1,26 @@
+# -*- coding: utf-8 -*-
 from collections import Counter
 from webresource._api import (
     Resource,
     ResourceConfig,
     ResourceMixin
 )
+import os
+import shutil
+import tempfile
 import unittest
 import webresource as wr
+
+
+def temp_directory(fn):
+    def wrapper(*a, **kw):
+        tempdir = tempfile.mkdtemp()
+        kw['tempdir'] = tempdir
+        try:
+            fn(*a, **kw)
+        finally:
+            shutil.rmtree(tempdir)
+    return wrapper
 
 
 class TestWebresource(unittest.TestCase):
@@ -37,7 +52,8 @@ class TestWebresource(unittest.TestCase):
         mixin.resolved_path = 'other'
         self.assertEqual(mixin.resolved_path, 'other')
 
-    def test_Resource(self):
+    @temp_directory
+    def test_Resource(self, tempdir):
         self.assertRaises(wr.ResourceError, Resource, 'res')
 
         resource = Resource(name='res', resource='res.ext')
@@ -128,6 +144,22 @@ class TestWebresource(unittest.TestCase):
         resource_url = resource.resource_url('')
         self.assertEqual(resource_url, 'https://ext.org/res')
         wr.config.development = False
+
+        with open(os.path.join(tempdir, 'res'), 'w') as f:
+            f.write('Resource Content ä')
+
+        resource = Resource(name='res', resource='res', directory=tempdir)
+        self.assertEqual(resource.file_data, b'Resource Content \xc3\xa4')
+
+        hash_ = 'VwEVpw/Hy4OlSeTX7oDQ/lzkncnWgKEV0zOX9OXa9Uy+qypLkrBrJxPtNsax1HJo'
+        self.assertEqual(resource.file_hash, hash_)
+
+        resource_url = resource.resource_url('https://tld.org')
+        self.assertEqual(resource_url, 'https://tld.org/res')
+
+        resource.hash_ = True
+        resource_url = resource.resource_url('https://tld.org')
+        self.assertEqual(resource_url, 'https://tld.org/res#{}'.format(hash_))
 
     def test_ScriptResource(self):
         script = wr.ScriptResource(name='js_res', resource='res.js')
