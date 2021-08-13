@@ -61,6 +61,18 @@ excluding some already registered resources:
 
     conditional_js.include = False
 
+Resource URLs can be rendered including a hash of the resource file. This is
+useful in environments with strong caching to make sure changed resources
+get reloaded properly:
+
+.. code-block:: python
+
+    cached_js = wr.ScriptResource(
+        name='cached_js',
+        hash_=True,
+        ...
+    )
+
 If external resources should be declared, pass ``url`` argument. In this case
 ``path``, ``resource`` and ``compressed`` get ignored:
 

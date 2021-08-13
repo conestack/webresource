@@ -434,7 +434,7 @@ class ResourceConflictError(ResourceError):
         for name, count in counter.items():
             if count > 1:
                 conflicting.append(name)
-        msg = 'Conflicting resource names: {}'.format(conflicting)
+        msg = 'Conflicting resource names: {}'.format(sorted(conflicting))
         super(ResourceConflictError, self).__init__(msg)
 
 
