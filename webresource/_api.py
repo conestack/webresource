@@ -96,6 +96,7 @@ class Resource(ResourceMixin):
         self.compressed = compressed
         self.hash_ = hash_
         self.hash_algorithm = hash_algorithm
+        self.file_hash = None
         if group:
             group.add(self)
         self.url = url
@@ -140,12 +141,16 @@ class Resource(ResourceMixin):
     def file_hash(self):
         """Hash of resource file content.
         """
-        if not config.development and hasattr(self, '_file_hash'):
+        if not config.development and self._file_hash is not None:
             return self._file_hash
         hash_func = self._hash_algorithms[self.hash_algorithm]
         hash_ = base64.b64encode(hash_func(self.file_data).digest()).decode()
-        self._file_hash = hash_
+        self.file_hash = hash_
         return hash_
+
+    @file_hash.setter
+    def file_hash(self, hash_):
+        self._file_hash = hash_
 
     def resource_url(self, base_url):
         """Create URL for resource.
@@ -232,6 +237,10 @@ class ScriptResource(Resource):
             finished parsing (only for external scripts).
         :param integrity: Allows a browser to check the fetched script to ensure
             that the code is never loaded if the source has been manipulated.
+            If integrity given and value is 'True', the integrity hash gets
+            calculated from the resource file content. This automatic calculation
+            won't work if ``url`` is given. If value is a string, it is assumed
+            to be the already calculated resource hash and is taken as is.
         :param nomodule: Specifies that the script should not be executed in
             browsers supporting ES2015 modules.
         :raise ResourceError: No resource and no url given.
@@ -246,6 +255,30 @@ class ScriptResource(Resource):
         self.defer = defer
         self.integrity = integrity
         self.nomodule = nomodule
+
+    @property
+    def integrity(self):
+        if not self._integrity:
+            return self._integrity
+        if not config.development and self._integrity_hash is not None:
+            return self._integrity_hash
+        if self._integrity is True:
+            self._integrity_hash = u'{}-{}'.format(
+                self.hash_algorithm,
+                self.file_hash
+            )
+        return self._integrity_hash
+
+    @integrity.setter
+    def integrity(self, integrity):
+        if integrity is True:
+            if self.url is not None:
+                msg = 'Cannot calculate integrity hash from external resource'
+                raise ResourceError(msg)
+            self._integrity_hash = None
+        else:
+            self._integrity_hash = integrity
+        self._integrity = integrity
 
     def render(self, base_url):
         """Renders the resource HTML ``script`` tag.

@@ -143,8 +143,8 @@ class TestWebresource(unittest.TestCase):
         resource = Resource(name='res', url='https://ext.org/res')
         resource_url = resource.resource_url('')
         self.assertEqual(resource_url, 'https://ext.org/res')
-        wr.config.development = False
 
+        wr.config.development = False
         with open(os.path.join(tempdir, 'res'), 'w') as f:
             f.write('Resource Content ä')
 
@@ -161,7 +161,23 @@ class TestWebresource(unittest.TestCase):
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/res#{}'.format(hash_))
 
-    def test_ScriptResource(self):
+        with open(os.path.join(tempdir, 'res'), 'w') as f:
+            f.write('Changed Content')
+
+        self.assertEqual(resource.file_data, b'Changed Content')
+        self.assertEqual(resource.file_hash, hash_)
+
+        resource_url = resource.resource_url('https://tld.org')
+        self.assertEqual(resource_url, 'https://tld.org/res#{}'.format(hash_))
+
+        wr.config.development = True
+        self.assertNotEqual(resource.file_hash, hash_)
+
+        resource_url = resource.resource_url('https://tld.org')
+        self.assertNotEqual(resource_url, 'https://tld.org/res#{}'.format(hash_))
+
+    @temp_directory
+    def test_ScriptResource(self, tempdir):
         script = wr.ScriptResource(name='js_res', resource='res.js')
         self.assertEqual(script.async_, None)
         self.assertEqual(script.defer, None)
@@ -180,6 +196,37 @@ class TestWebresource(unittest.TestCase):
             script.render('https://tld.org'),
             '<script src="https://tld.org/res.js" type="module"></script>'
         )
+
+        script.url = 'https://ext.org/script.js'
+        self.assertRaises(wr.ResourceError, setattr, script, 'integrity', True)
+
+        script.integrity = 'sha384-ABC'
+        self.assertEqual(script.integrity, 'sha384-ABC')
+
+        with open(os.path.join(tempdir, 'script.js'), 'w') as f:
+            f.write('Script Content')
+
+        script = wr.ScriptResource(
+            name='script',
+            resource='script.js',
+            directory=tempdir,
+            integrity=True
+        )
+        hash_ = 'omjyXfsb+ti/5fpn4QjjSYjpKRnxWpzc6rIUE6mXxyDjbLS9AotgsLWQZtylXicX'
+        self.assertEqual(script.file_hash, hash_)
+        self.assertEqual(script.integrity, 'sha384-{}'.format(hash_))
+
+        rendered = script.render('https://tld.org')
+        expected = 'integrity="sha384-{}"'.format(hash_)
+        self.assertTrue(rendered.find(expected))
+
+        with open(os.path.join(tempdir, 'script.js'), 'w') as f:
+            f.write('Changed Script')
+
+        self.assertEqual(script.integrity, 'sha384-{}'.format(hash_))
+
+        wr.config.development = True
+        self.assertNotEqual(script.integrity, 'sha384-{}'.format(hash_))
 
     def test_LinkResource(self):
         link = wr.LinkResource(name='icon_res', resource='icon.png')

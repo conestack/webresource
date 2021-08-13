@@ -4,6 +4,8 @@ Changelog
 1.0b7 (unreleased)
 ------------------
 
+- Add auto integrity hash calculation on ``ScriptResource``.
+
 - Add ``hash_`` and ``hash_algorithm`` keyword arguments to ``Resource``,
   ``ScriptResource``, ``LinkResource`` and ``FileResource``.
 
