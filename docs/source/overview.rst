@@ -4,7 +4,7 @@ Overview
 Declaring resources
 -------------------
 
-``webresource`` provides 3 types of resources. ``ScriptResource`` is used for
+Webresource provides 3 types of resources. ``ScriptResource`` is used for
 registering Javascript, ``StyleResource`` for CSS files and ``LinkResource``
 can be used for registering all sorts of resource links.
 
@@ -25,7 +25,7 @@ Declare a script:
 ``name`` is a unique identifier for the resource. ``directory`` defines the
 location in the file system where the resource can be found. ``resource`` is
 the default resource file corresponding to this declaration. ``compressed`` is
-the minified version of the resource, which gets considered if ``webresource``
+the minified version of the resource, which gets considered if Webresource
 is used in production mode. ``path`` defines the path part of the URL at which
 this resource is published.
 
@@ -85,7 +85,7 @@ Resources can be grouped by adding them to ``ResourceGroup`` objects:
 
     scripts = wr.ResourceGroup(name='scripts')
 
-Resources can be added to a group at instanciation time if group is known in
+Resources can be added to a group at instantiation time if group is known in
 advance.
 
 .. code-block:: python
@@ -142,7 +142,7 @@ callback funtion or flag.
 Deliver resources
 -----------------
 
-``webresource`` not provides any mechanism to publish the declared resources.
+Webresource not provides any mechanism to publish the declared resources.
 It's up to the user to make the resources in the defined directories available
 to the browser at the defined paths.
 
@@ -209,8 +209,8 @@ A complete example:
 Debugging
 ---------
 
-To prevent ``webresource`` generating links to the compressed versions of
-declared resources, ``development`` flag of the config singletion needs to be
+To prevent Webresource generating links to the compressed versions of
+declared resources, ``development`` flag of the config singleton needs to be
 set:
 
 .. code-block:: python
