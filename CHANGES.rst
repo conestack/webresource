@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0b7 (unreleased)
+1.0b7 (2021-08-16)
 ------------------
 
 - Add auto integrity hash calculation on ``ScriptResource``.
