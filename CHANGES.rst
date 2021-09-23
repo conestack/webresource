@@ -4,7 +4,14 @@ Changelog
 1.0b8 (unreleased)
 ------------------
 
-- No changes yet.
+- Rename ``hash_`` keyword argument of resources to ``unique``.
+
+- Introduce ``unique_prefix`` keyword argument on resources.
+
+- Change behavior of unique URL generation. Unique key now gets rendered
+  itermediate between URL path and file name. This way we play nice with caching
+  servers, but this also implies the need of custom URL
+  dispatching/rewriting/traversal when working with unique resource URLs.
 
 
 1.0b7 (2021-08-16)

@@ -61,15 +61,19 @@ excluding some already registered resources:
 
     conditional_js.include = False
 
-Resource URLs can be rendered including a hash of the resource file. This is
-useful in environments with strong caching to make sure changed resources
-get reloaded properly:
+Resource URLs can be rendered including a unique key of the resource file.
+This is useful in environments with strong caching to make sure changed
+resources get reloaded properly. When working with unique resource URLs, the
+unique key gets rendered intermediate between path and file name, thus the
+integrator needs to implement custom URL rewriting/dispatching/traversal for
+correct resource delivery:
 
 .. code-block:: python
 
     cached_js = wr.ScriptResource(
         name='cached_js',
-        hash_=True,
+        unique=True,
+        unique_prefix='++webresource++',
         ...
     )
 

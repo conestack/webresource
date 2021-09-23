@@ -3,6 +3,10 @@ import base64
 import hashlib
 import inspect
 import os
+import uuid
+
+
+namespace_uuid = uuid.UUID('f3341b2e-f97e-40d2-ad2f-10a08a778877')
 
 
 class ResourceConfig(object):
@@ -62,9 +66,10 @@ class Resource(ResourceMixin):
     )
 
     def __init__(self, name='', depends='', directory=None, path='',
-                 resource=None, compressed=None, include=True, hash_=False,
-                 hash_algorithm='sha384', group=None, url=None,
-                 crossorigin=None, referrerpolicy=None, type_=None):
+                 resource=None, compressed=None, include=True, unique=False,
+                 unique_prefix='++webresource++', hash_algorithm='sha384',
+                 group=None, url=None, crossorigin=None, referrerpolicy=None,
+                 type_=None):
         """Base class for resources.
 
         :param name: The resource unique name.
@@ -75,8 +80,10 @@ class Resource(ResourceMixin):
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
             include the resource.
-        :param hash_: Flag whether to render resource URL with hash. Has no
-            effect if ``url`` is given.
+        :param unique: Flag whether to render resource URL including unique key.
+            Has no effect if ``url`` is given.
+        :param unique_prefix: Prefix for unique key. Defaults to
+            '++webresource++'.
         :param hash_algorithm: Name of the hashing algorithm. Either 'sha256',
             'sha384' or 'sha512'. Defaults to 'sha384'.
         :param group: Optional resource group instance.
@@ -94,7 +101,8 @@ class Resource(ResourceMixin):
         self.directory = directory
         self.resource = resource
         self.compressed = compressed
-        self.hash_ = hash_
+        self.unique = unique
+        self.unique_prefix = unique_prefix
         self.hash_algorithm = hash_algorithm
         self.file_hash = None
         if group:
@@ -152,6 +160,13 @@ class Resource(ResourceMixin):
     def file_hash(self, hash_):
         self._file_hash = hash_
 
+    @property
+    def unique_key(self):
+        return u'{}{}'.format(
+            self.unique_prefix,
+            str(uuid.uuid5(namespace_uuid, self.file_hash))
+        )
+
     def resource_url(self, base_url):
         """Create URL for resource.
 
@@ -160,14 +175,13 @@ class Resource(ResourceMixin):
         if self.url is not None:
             return self.url
         path = self.resolved_path.strip('/')
+        parts = [base_url.strip('/')]
         if path:
-            parts = [base_url.strip('/'), path, self.file_name]
-        else:
-            parts = [base_url.strip('/'), self.file_name]
-        url = u'/'.join(parts)
-        if self.hash_:
-            url = u'{}#{}'.format(url, self.file_hash)
-        return url
+            parts.append(path)
+        if self.unique:
+            parts.append(self.unique_key)
+        parts.append(self.file_name)
+        return u'/'.join(parts)
 
     def render(self, base_url):
         """Renders the resource HTML tag. must be implemented on subclass.
@@ -207,10 +221,11 @@ class ScriptResource(Resource):
     """
 
     def __init__(self, name='', depends='', directory=None, path='',
-                 resource=None, compressed=None, include=True, hash_=False,
-                 hash_algorithm='sha384', group=None, url=None,
-                 crossorigin=None, referrerpolicy=None, type_=None,
-                 async_=None, defer=None, integrity=None, nomodule=None):
+                 resource=None, compressed=None, include=True, unique=False,
+                 unique_prefix='++webresource++', hash_algorithm='sha384',
+                 group=None, url=None, crossorigin=None, referrerpolicy=None,
+                 type_=None, async_=None, defer=None, integrity=None,
+                 nomodule=None):
         """Create script resource.
 
         :param name: The resource unique name.
@@ -221,8 +236,10 @@ class ScriptResource(Resource):
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
             include the resource.
-        :param hash_: Flag whether to render resource URL with hash. Has no
-            effect if ``url`` is given.
+        :param unique: Flag whether to render resource URL including unique key.
+            Has no effect if ``url`` is given.
+        :param unique_prefix: Prefix for unique key. Defaults to
+            '++webresource++'.
         :param hash_algorithm: Name of the hashing algorithm. Either 'sha256',
             'sha384' or 'sha512'. Defaults to 'sha384'.
         :param group: Optional resource group instance.
@@ -248,7 +265,8 @@ class ScriptResource(Resource):
         super(ScriptResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            hash_=hash_, hash_algorithm=hash_algorithm, group=group, url=url,
+            unique=unique, unique_prefix=unique_prefix,
+            hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
         )
         self.async_ = async_
@@ -302,10 +320,11 @@ class LinkResource(Resource):
     """
 
     def __init__(self, name='', depends='', directory=None, path='',
-                 resource=None, compressed=None, include=True, hash_=False,
-                 hash_algorithm='sha384', group=None, url=None,
-                 crossorigin=None, referrerpolicy=None, type_=None,
-                 hreflang=None, media=None, rel=None, sizes=None, title=None):
+                 resource=None, compressed=None, include=True, unique=False,
+                 unique_prefix='++webresource++', hash_algorithm='sha384',
+                 group=None, url=None, crossorigin=None, referrerpolicy=None,
+                 type_=None, hreflang=None, media=None, rel=None, sizes=None,
+                 title=None):
         """Create link resource.
 
         :param name: The resource unique name.
@@ -316,8 +335,10 @@ class LinkResource(Resource):
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
             include the resource.
-        :param hash_: Flag whether to render resource URL with hash. Has no
-            effect if ``url`` is given.
+        :param unique: Flag whether to render resource URL including unique key.
+            Has no effect if ``url`` is given.
+        :param unique_prefix: Prefix for unique key. Defaults to
+            '++webresource++'.
         :param hash_algorithm: Name of the hashing algorithm. Either 'sha256',
             'sha384' or 'sha512'. Defaults to 'sha384'.
         :param group: Optional resource group instance.
@@ -340,7 +361,8 @@ class LinkResource(Resource):
         super(LinkResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            hash_=hash_, hash_algorithm=hash_algorithm, group=group, url=url,
+            unique=unique, unique_prefix=unique_prefix,
+            hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
         )
         self.hreflang = hreflang
@@ -372,10 +394,11 @@ class StyleResource(LinkResource):
     """
 
     def __init__(self, name='', depends='', directory=None, path='',
-                 resource=None, compressed=None, include=True, hash_=False,
-                 hash_algorithm='sha384', group=None, url=None,
-                 crossorigin=None, referrerpolicy=None, hreflang=None,
-                 media='all', rel='stylesheet', sizes=None, title=None):
+                 resource=None, compressed=None, include=True, unique=False,
+                 unique_prefix='++webresource++', hash_algorithm='sha384',
+                 group=None, url=None, crossorigin=None, referrerpolicy=None,
+                 hreflang=None, media='all', rel='stylesheet', sizes=None,
+                 title=None):
         """Create link resource.
 
         :param name: The resource unique name.
@@ -386,8 +409,10 @@ class StyleResource(LinkResource):
         :param compressed: Optional compressed version of resource file.
         :param include: Flag or callback function returning a flag whether to
             include the resource.
-        :param hash_: Flag whether to render resource URL with hash. Has no
-            effect if ``url`` is given.
+        :param unique: Flag whether to render resource URL including unique key.
+            Has no effect if ``url`` is given.
+        :param unique_prefix: Prefix for unique key. Defaults to
+            '++webresource++'.
         :param hash_algorithm: Name of the hashing algorithm. Either 'sha256',
             'sha384' or 'sha512'. Defaults to 'sha384'.
         :param group: Optional resource group instance.
@@ -407,7 +432,8 @@ class StyleResource(LinkResource):
         super(StyleResource, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
-            hash_=hash_, hash_algorithm=hash_algorithm, group=group, url=url,
+            unique=unique, unique_prefix=unique_prefix,
+            hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy,
             type_='text/css', hreflang=hreflang, media=media, rel=rel,
             sizes=None, title=title

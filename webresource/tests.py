@@ -65,7 +65,8 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
         self.assertEqual(resource.include, True)
-        self.assertEqual(resource.hash_, False)
+        self.assertEqual(resource.unique, False)
+        self.assertEqual(resource.unique_prefix, '++webresource++')
         self.assertEqual(resource.hash_algorithm, 'sha384')
         self.assertEqual(resource.url, None)
         self.assertEqual(resource.crossorigin, None)
@@ -151,15 +152,27 @@ class TestWebresource(unittest.TestCase):
         resource = Resource(name='res', resource='res', directory=tempdir)
         self.assertEqual(resource.file_data, b'Resource Content \xc3\xa4')
 
-        hash_ = 'VwEVpw/Hy4OlSeTX7oDQ/lzkncnWgKEV0zOX9OXa9Uy+qypLkrBrJxPtNsax1HJo'
+        hash_ = (
+            'VwEVpw/Hy4OlSeTX7oDQ/lzkncnWgKEV'
+            '0zOX9OXa9Uy+qypLkrBrJxPtNsax1HJo'
+        )
         self.assertEqual(resource.file_hash, hash_)
 
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/res')
 
-        resource.hash_ = True
+        unique_key = resource.unique_key
+        self.assertEqual(
+            unique_key,
+            '++webresource++4be37419-d3f6-5ec5-99e8-92565ede87d0'
+        )
+
+        resource.unique = True
         resource_url = resource.resource_url('https://tld.org')
-        self.assertEqual(resource_url, 'https://tld.org/res#{}'.format(hash_))
+        self.assertEqual(
+            resource_url,
+            'https://tld.org/{}/res'.format(unique_key)
+        )
 
         with open(os.path.join(tempdir, 'res'), 'w') as f:
             f.write('Changed Content')
@@ -168,13 +181,19 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.file_hash, hash_)
 
         resource_url = resource.resource_url('https://tld.org')
-        self.assertEqual(resource_url, 'https://tld.org/res#{}'.format(hash_))
+        self.assertEqual(
+            resource_url,
+            'https://tld.org/{}/res'.format(unique_key)
+        )
 
         wr.config.development = True
         self.assertNotEqual(resource.file_hash, hash_)
 
         resource_url = resource.resource_url('https://tld.org')
-        self.assertNotEqual(resource_url, 'https://tld.org/res#{}'.format(hash_))
+        self.assertNotEqual(
+            resource_url,
+            'https://tld.org/{}/res'.format(unique_key)
+        )
 
     @temp_directory
     def test_ScriptResource(self, tempdir):
