@@ -39,6 +39,9 @@ setup(
     install_requires=['setuptools'],
     extras_require=dict(
         test=['coverage'],
-        docs=['Sphinx']
+        docs=[
+            'Sphinx',
+            'sphinx_conestack_theme'
+        ]
     )
 )
