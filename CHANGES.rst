@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0b8 (unreleased)
+1.0b8 (2021-09-23)
 ------------------
 
 - Rename ``hash_`` keyword argument of resources to ``unique``.

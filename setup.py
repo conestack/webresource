@@ -7,7 +7,7 @@ def read_file(name):
         return f.read()
 
 
-version = '1.0b8.dev0'
+version = '1.0b8'
 shortdesc = "A resource registry for web applications."
 longdesc = '\n\n'.join([read_file(name) for name in [
     'README.rst',
