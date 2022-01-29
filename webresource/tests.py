@@ -148,8 +148,8 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource_url, 'https://ext.org/res')
 
         wr.config.development = False
-        with open(os.path.join(tempdir, 'res'), 'w') as f:
-            f.write('Resource Content ä')
+        with open(os.path.join(tempdir, 'res'), 'wb') as f:
+            f.write('Resource Content ä'.encode('utf8'))
 
         resource = Resource(name='res', resource='res', directory=tempdir)
         self.assertEqual(resource.file_data, b'Resource Content \xc3\xa4')
