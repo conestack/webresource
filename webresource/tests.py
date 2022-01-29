@@ -22,6 +22,9 @@ def temp_directory(fn):
             shutil.rmtree(tempdir)
     return wrapper
 
+def np(path):
+    """normalize path"""
+    return path.replace("/", os.path.sep)
 
 class TestWebresource(unittest.TestCase):
 
@@ -60,7 +63,7 @@ class TestWebresource(unittest.TestCase):
         self.assertIsInstance(resource, ResourceMixin)
         self.assertEqual(resource.name, 'res')
         self.assertEqual(resource.depends, '')
-        self.assertTrue(resource.directory.endswith('/webresource'))
+        self.assertTrue(resource.directory.endswith(np('/webresource')))
         self.assertEqual(resource.path, '')
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
@@ -78,14 +81,13 @@ class TestWebresource(unittest.TestCase):
         )
 
         resource = Resource(name='res', directory='./dir', resource='res.ext')
-        self.assertTrue(resource.directory.endswith('/webresource/dir'))
-
+        self.assertTrue(resource.directory.endswith(np('/webresource/dir')))
         resource = Resource(
             name='res',
             directory='./dir/../other',
             resource='res.ext'
         )
-        self.assertTrue(resource.directory.endswith('/webresource/other'))
+        self.assertTrue(resource.directory.endswith(np('/webresource/other')))
 
         resource = Resource(name='res', directory='/dir', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
