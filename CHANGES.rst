@@ -4,7 +4,9 @@ Changelog
 1.0b9 (unreleased)
 ------------------
 
-- No changes yet.
+- Added `GracefulResourceRenderer`. 
+  Fixes #1.
+  [@jensens]
 
 
 1.0b8 (2021-09-23)
