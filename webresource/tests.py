@@ -91,15 +91,15 @@ class TestWebresource(unittest.TestCase):
 
         resource = Resource(name='res', directory='/dir', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
-        self.assertEqual(resource.file_path, '/dir/res.ext')
+        self.assertTrue(resource.file_path.endswith(np('/dir/res.ext')))
 
         resource.compressed = 'res.min.ext'
         self.assertEqual(resource.file_name, 'res.min.ext')
-        self.assertEqual(resource.file_path, '/dir/res.min.ext')
+        self.assertTrue(resource.file_path.endswith(np('/dir/res.min.ext')))
 
         wr.config.development = True
         self.assertEqual(resource.file_name, 'res.ext')
-        self.assertEqual(resource.file_path, '/dir/res.ext')
+        self.assertTrue(resource.file_path.endswith(np('/dir/res.ext')))
         wr.config.development = False
 
         group = wr.ResourceGroup(name='group')
