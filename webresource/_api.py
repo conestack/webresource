@@ -3,7 +3,11 @@ import base64
 import hashlib
 import inspect
 import os
+import sys
 import uuid
+
+
+is_py3 = sys.version_info[0] >= 3
 
 
 namespace_uuid = uuid.UUID('f3341b2e-f97e-40d2-ad2f-10a08a778877')
@@ -152,7 +156,8 @@ class Resource(ResourceMixin):
         if not config.development and self._file_hash is not None:
             return self._file_hash
         hash_func = self._hash_algorithms[self.hash_algorithm]
-        hash_ = base64.b64encode(hash_func(self.file_data).digest()).decode()
+        hash_ = base64.b64encode(hash_func(self.file_data).digest())
+        hash_ = hash_.decode() if is_py3 else hash_
         self.file_hash = hash_
         return hash_
 
