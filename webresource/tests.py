@@ -30,6 +30,11 @@ def temp_directory(fn):
     return wrapper
 
 
+def np(path):
+    """Normalize path."""
+    return path.replace("/", os.path.sep)
+
+
 class TestWebresource(unittest.TestCase):
 
     def tearDown(self):
@@ -67,7 +72,7 @@ class TestWebresource(unittest.TestCase):
         self.assertIsInstance(resource, ResourceMixin)
         self.assertEqual(resource.name, 'res')
         self.assertEqual(resource.depends, '')
-        self.assertTrue(resource.directory.endswith('/webresource'))
+        self.assertTrue(resource.directory.endswith(np('/webresource')))
         self.assertEqual(resource.path, '')
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
@@ -85,26 +90,25 @@ class TestWebresource(unittest.TestCase):
         )
 
         resource = Resource(name='res', directory='./dir', resource='res.ext')
-        self.assertTrue(resource.directory.endswith('/webresource/dir'))
-
+        self.assertTrue(resource.directory.endswith(np('/webresource/dir')))
         resource = Resource(
             name='res',
             directory='./dir/../other',
             resource='res.ext'
         )
-        self.assertTrue(resource.directory.endswith('/webresource/other'))
+        self.assertTrue(resource.directory.endswith(np('/webresource/other')))
 
         resource = Resource(name='res', directory='/dir', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
-        self.assertEqual(resource.file_path, '/dir/res.ext')
+        self.assertTrue(resource.file_path.endswith(np('/dir/res.ext')))
 
         resource.compressed = 'res.min.ext'
         self.assertEqual(resource.file_name, 'res.min.ext')
-        self.assertEqual(resource.file_path, '/dir/res.min.ext')
+        self.assertTrue(resource.file_path.endswith(np('/dir/res.min.ext')))
 
         wr.config.development = True
         self.assertEqual(resource.file_name, 'res.ext')
-        self.assertEqual(resource.file_path, '/dir/res.ext')
+        self.assertTrue(resource.file_path.endswith(np('/dir/res.ext')))
         wr.config.development = False
 
         group = wr.ResourceGroup(name='group')
@@ -153,8 +157,8 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource_url, 'https://ext.org/res')
 
         wr.config.development = False
-        with open(os.path.join(tempdir, 'res'), 'w') as f:
-            f.write('Resource Content ä')
+        with open(os.path.join(tempdir, 'res'), 'wb') as f:
+            f.write(u'Resource Content ä'.encode('utf8'))
 
         resource = Resource(name='res', resource='res', directory=tempdir)
         self.assertEqual(resource.file_data, b'Resource Content \xc3\xa4')

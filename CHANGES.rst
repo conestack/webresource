@@ -4,9 +4,13 @@ Changelog
 1.0b9 (unreleased)
 ------------------
 
-- Added `GracefulResourceRenderer`. 
+- Add Tox, Github actions and make it run on Windows.
+  Modernize setup.[py|cfg].
+  [jensens]
+
+- Added ``GracefulResourceRenderer``. 
   Fixes #1.
-  [@jensens]
+  [jensens]
 
 
 1.0b8 (2021-09-23)

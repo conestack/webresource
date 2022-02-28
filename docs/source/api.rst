@@ -52,6 +52,7 @@ ResourceRenderer
 .. autoclass:: webresource::ResourceRenderer
     :members: __init__, render
 
+
 GracefulResourceRenderer
 ------------------------
 

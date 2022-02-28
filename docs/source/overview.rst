@@ -169,8 +169,9 @@ deliver. ``members`` can be an instance or list of resources or resource groups.
 
 The ``ResourceRenderer`` then is used to create the markup.
 
-The ``GracefulResourceRenderer`` creates the markup, but does not fail if one resource is invalid.
-It logs an error and places a comment about the failure instead of a HTML-tag.
+The ``GracefulResourceRenderer`` creates the markup, but does not fail if one
+resource is invalid. It logs an error and places a comment about the failure
+instead of a HTML-tag.
 
 A complete example:
 
