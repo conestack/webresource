@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import Counter
 from webresource._api import (
+    is_py3,
     Resource,
     ResourceConfig,
     ResourceMixin
@@ -10,6 +11,12 @@ import shutil
 import tempfile
 import unittest
 import webresource as wr
+
+
+try:
+    FileNotFoundError
+except NameError:  # pragma: nocover
+    FileNotFoundError = EnvironmentError
 
 
 def temp_directory(fn):
@@ -523,33 +530,27 @@ class TestWebresource(unittest.TestCase):
             base_url='https://example.com',
         )
         rendered = renderer.render()
-        self.assertEqual(
-            rendered,
-            (
-                '<link href="https://example.com/res/icon.png" '
-                'rel="icon" type="image/png" />\n'
-                '<link href="https://example.com/res/styles.css" media="all" '
-                'rel="stylesheet" type="text/css" />\n'
-                '<link href="https://ext.org/styles.css" media="all" '
-                'rel="stylesheet" type="text/css" />\n'
-                '<script src="https://example.com/res/script.min.js"></script>'
-            )
-        )
+        self.assertEqual(rendered, (
+            '<link href="https://example.com/res/icon.png" '
+            'rel="icon" type="image/png" />\n'
+            '<link href="https://example.com/res/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<link href="https://ext.org/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<script src="https://example.com/res/script.min.js"></script>'
+        ))
 
         wr.config.development = True
         rendered = renderer.render()
-        self.assertEqual(
-            rendered,
-            (
-                '<link href="https://example.com/res/icon.png" '
-                'rel="icon" type="image/png" />\n'
-                '<link href="https://example.com/res/styles.css" media="all" '
-                'rel="stylesheet" type="text/css" />\n'
-                '<link href="https://ext.org/styles.css" media="all" '
-                'rel="stylesheet" type="text/css" />\n'
-                '<script src="https://example.com/res/script.js"></script>'
-            )
-        )
+        self.assertEqual(rendered, (
+            '<link href="https://example.com/res/icon.png" '
+            'rel="icon" type="image/png" />\n'
+            '<link href="https://example.com/res/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<link href="https://ext.org/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<script src="https://example.com/res/script.js"></script>'
+        ))
         # check if unique raises on is catched on render and turned into
         wr.ScriptResource(
             name='js2',
@@ -559,28 +560,28 @@ class TestWebresource(unittest.TestCase):
             depends="js",
             unique=True,
         )
-        with self.assertLogs() as captured:
+        if is_py3:  # pragma: nocover
+            with self.assertLogs() as captured:
+                rendered = renderer.render()
+                # check that there is only one log message
+                self.assertEqual(len(captured.records), 1)
+                # check if its ours
+                self.assertEqual(
+                    captured.records[0].getMessage().split('\n')[0],
+                    'Failure to render resource "js2"',
+                )
+        else:  # pragma: nocover
             rendered = renderer.render()
-            # check that there is only one log message
-            self.assertEqual(len(captured.records), 1)
-            # check if its ours
-            self.assertEqual(
-                captured.records[0].getMessage().split('\n')[0],
-                'Failure to render resource "js2"',
-            )
-        self.assertEqual(
-            rendered,
-            (
-                '<link href="https://example.com/res/icon.png" '
-                'rel="icon" type="image/png" />\n'
-                '<link href="https://example.com/res/styles.css" media="all" '
-                'rel="stylesheet" type="text/css" />\n'
-                '<link href="https://ext.org/styles.css" media="all" '
-                'rel="stylesheet" type="text/css" />\n'
-                '<script src="https://example.com/res/script.js"></script>\n'
-                '<!-- Failure to render resource "js2" - details in logs -->'
-            )
-        )
+        self.assertEqual(rendered, (
+            '<link href="https://example.com/res/icon.png" '
+            'rel="icon" type="image/png" />\n'
+            '<link href="https://example.com/res/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<link href="https://ext.org/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<script src="https://example.com/res/script.js"></script>\n'
+            '<!-- Failure to render resource "js2" - details in logs -->'
+        ))
 
 
 if __name__ == '__main__':

@@ -4,11 +4,18 @@ import hashlib
 import inspect
 import logging
 import os
+import sys
 import uuid
 
 
-logger = logging.getLogger(__name__)
+try:
+    FileNotFoundError
+except NameError:  # pragma: nocover
+    FileNotFoundError = EnvironmentError
 
+
+logger = logging.getLogger(__name__)
+is_py3 = sys.version_info[0] >= 3
 namespace_uuid = uuid.UUID('f3341b2e-f97e-40d2-ad2f-10a08a778877')
 
 
@@ -155,7 +162,8 @@ class Resource(ResourceMixin):
         if not config.development and self._file_hash is not None:
             return self._file_hash
         hash_func = self._hash_algorithms[self.hash_algorithm]
-        hash_ = base64.b64encode(hash_func(self.file_data).digest()).decode()
+        hash_ = base64.b64encode(hash_func(self.file_data).digest())
+        hash_ = hash_.decode() if is_py3 else hash_
         self.file_hash = hash_
         return hash_
 
@@ -623,6 +631,7 @@ class ResourceRenderer(object):
             res.render(self.base_url) for res in self.resolver.resolve()
         ])
 
+
 class GracefulResourceRenderer(ResourceRenderer):
     """Resource renderer, which does not fail but logs an exception.
     """
@@ -632,8 +641,8 @@ class GracefulResourceRenderer(ResourceRenderer):
         for resource in self.resolver.resolve():
             try:
                 lines.append(resource.render(self.base_url))
-            except (ResourceError, FileNotFoundError) as e:
-                msg = f'Failure to render resource "{resource.name}"'
-                lines.append(f"<!-- {msg} - details in logs -->")
+            except (ResourceError, FileNotFoundError):
+                msg = u'Failure to render resource "{}"'.format(resource.name)
+                lines.append(u'<!-- {} - details in logs -->'.format(msg))
                 logger.exception(msg)
-        return '\n'.join(lines)
+        return u'\n'.join(lines)
