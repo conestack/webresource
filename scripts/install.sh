@@ -1,11 +1,7 @@
 #!/bin/bash
 
-for dir in lib include bin share; do
-    if [ -d "$dir" ]; then
-        rm -r "$dir"
-    fi
-done
+./scripts/clean.sh
 
 python3 -m venv .
-./bin/pip install coverage
+./bin/pip install wheel coverage
 ./bin/pip install -e .[docs]

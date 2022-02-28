@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import Counter
 from webresource._api import (
+    is_py3,
     Resource,
     ResourceConfig,
     ResourceMixin
@@ -10,6 +11,12 @@ import shutil
 import tempfile
 import unittest
 import webresource as wr
+
+
+try:
+    FileNotFoundError
+except NameError:  # pragma: nocover
+    FileNotFoundError = EnvironmentError
 
 
 def temp_directory(fn):
@@ -22,9 +29,11 @@ def temp_directory(fn):
             shutil.rmtree(tempdir)
     return wrapper
 
+
 def np(path):
-    """normalize path"""
+    """Normalize path."""
     return path.replace("/", os.path.sep)
+
 
 class TestWebresource(unittest.TestCase):
 
@@ -149,7 +158,7 @@ class TestWebresource(unittest.TestCase):
 
         wr.config.development = False
         with open(os.path.join(tempdir, 'res'), 'wb') as f:
-            f.write('Resource Content ä'.encode('utf8'))
+            f.write(u'Resource Content ä'.encode('utf8'))
 
         resource = Resource(name='res', resource='res', directory=tempdir)
         self.assertEqual(resource.file_data, b'Resource Content \xc3\xa4')
@@ -485,6 +494,97 @@ class TestWebresource(unittest.TestCase):
             '<link href="https://ext.org/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
             '<script src="https://example.com/res/script.js"></script>'
+        ))
+
+        # check if unique raises on render b/c file does not exist.
+        wr.ScriptResource(
+            name='js2',
+            resource='script2.js',
+            compressed='script2.min.js',
+            group=resources,
+            unique=True,
+        )
+        with self.assertRaises(FileNotFoundError):
+            renderer.render()
+
+    def test_GracefulResourceRenderer(self):
+        resources = wr.ResourceGroup('res', path='res')
+        wr.LinkResource(
+            name='icon',
+            resource='icon.png',
+            group=resources,
+            rel='icon',
+            type_='image/png',
+        )
+        wr.StyleResource(name='css', resource='styles.css', group=resources)
+        wr.StyleResource(
+            name='ext_css',
+            url='https://ext.org/styles.css',
+            group=resources,
+        )
+        wr.ScriptResource(
+            name='js',
+            resource='script.js',
+            compressed='script.min.js',
+            group=resources,
+        )
+        resolver = wr.ResourceResolver(resources)
+        renderer = wr.GracefulResourceRenderer(
+            resolver,
+            base_url='https://example.com',
+        )
+        rendered = renderer.render()
+        self.assertEqual(rendered, (
+            '<link href="https://example.com/res/icon.png" '
+            'rel="icon" type="image/png" />\n'
+            '<link href="https://example.com/res/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<link href="https://ext.org/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<script src="https://example.com/res/script.min.js"></script>'
+        ))
+
+        wr.config.development = True
+        rendered = renderer.render()
+        self.assertEqual(rendered, (
+            '<link href="https://example.com/res/icon.png" '
+            'rel="icon" type="image/png" />\n'
+            '<link href="https://example.com/res/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<link href="https://ext.org/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<script src="https://example.com/res/script.js"></script>'
+        ))
+        # check if unique raises on is catched on render and turned into
+        wr.ScriptResource(
+            name='js2',
+            resource='script2.js',
+            compressed='script2.min.js',
+            group=resources,
+            depends="js",
+            unique=True,
+        )
+        if is_py3:  # pragma: nocover
+            with self.assertLogs() as captured:
+                rendered = renderer.render()
+                # check that there is only one log message
+                self.assertEqual(len(captured.records), 1)
+                # check if its ours
+                self.assertEqual(
+                    captured.records[0].getMessage().split('\n')[0],
+                    'Failure to render resource "js2"',
+                )
+        else:  # pragma: nocover
+            rendered = renderer.render()
+        self.assertEqual(rendered, (
+            '<link href="https://example.com/res/icon.png" '
+            'rel="icon" type="image/png" />\n'
+            '<link href="https://example.com/res/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<link href="https://ext.org/styles.css" media="all" '
+            'rel="stylesheet" type="text/css" />\n'
+            '<script src="https://example.com/res/script.js"></script>\n'
+            '<!-- Failure to render resource "js2" - details in logs -->'
         ))
 
 

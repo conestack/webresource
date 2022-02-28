@@ -53,6 +53,13 @@ ResourceRenderer
     :members: __init__, render
 
 
+GracefulResourceRenderer
+------------------------
+
+.. autoclass:: webresource::GracefulResourceRenderer
+    :members: __init__, render
+
+
 Exceptions
 ----------
 
