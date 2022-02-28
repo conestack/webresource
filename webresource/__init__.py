@@ -8,6 +8,7 @@ from webresource._api import (  # noqa
     ResourceGroup,
     ResourceMissingDependencyError,
     ResourceRenderer,
+    GracefulResourceRenderer,
     ResourceResolver,
     ScriptResource,
     StyleResource

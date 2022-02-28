@@ -2,14 +2,20 @@ from collections import Counter
 import base64
 import hashlib
 import inspect
+import logging
 import os
 import sys
 import uuid
 
 
+try:
+    FileNotFoundError
+except NameError:  # pragma: nocover
+    FileNotFoundError = EnvironmentError
+
+
+logger = logging.getLogger(__name__)
 is_py3 = sys.version_info[0] >= 3
-
-
 namespace_uuid = uuid.UUID('f3341b2e-f97e-40d2-ad2f-10a08a778877')
 
 
@@ -624,3 +630,19 @@ class ResourceRenderer(object):
         return u'\n'.join([
             res.render(self.base_url) for res in self.resolver.resolve()
         ])
+
+
+class GracefulResourceRenderer(ResourceRenderer):
+    """Resource renderer, which does not fail but logs an exception.
+    """
+
+    def render(self):
+        lines = []
+        for resource in self.resolver.resolve():
+            try:
+                lines.append(resource.render(self.base_url))
+            except (ResourceError, FileNotFoundError):
+                msg = u'Failure to render resource "{}"'.format(resource.name)
+                lines.append(u'<!-- {} - details in logs -->'.format(msg))
+                logger.exception(msg)
+        return u'\n'.join(lines)
