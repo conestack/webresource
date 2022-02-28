@@ -19,7 +19,6 @@ jobs:
           - "3.9"
           - "3.8"
           - "3.7"
-          - "2.7"
     steps:
       - name: Setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v2
@@ -32,4 +31,3 @@ jobs:
         run: tox4 r -vv --notest
       - name: Run test suite
         run: tox4 r --skip-pkg-install
-

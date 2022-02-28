@@ -1,13 +1,2 @@
 include *.rst
 include docs/source/overview.rst
-
-# added by check-manifest
-include *.txt
-recursive-include docs *.bat
-recursive-include docs *.css
-recursive-include docs *.gitkeep
-recursive-include docs *.py
-recursive-include docs *.rst
-recursive-include docs Makefile
-recursive-include scripts *.sh
-recursive-include webresource *.py
