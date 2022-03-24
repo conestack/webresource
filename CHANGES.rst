@@ -1,8 +1,8 @@
 Changelog
 =========
 
-1.0b9 (unreleased)
-------------------
+1.0 (unreleased)
+----------------
 
 - Add Tox, Github actions and make it run on Windows.
   Modernize setup.[py|cfg].
