@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0 (unreleased)
+1.0 (2022-03-24)
 ----------------
 
 - Add Tox, Github actions and make it run on Windows.
