@@ -4,7 +4,8 @@ Changelog
 1.1 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Resources can define multiple dependencies.
+  [rnix]
 
 
 1.0 (2022-03-24)

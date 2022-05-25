@@ -75,7 +75,7 @@ class Resource(ResourceMixin):
         sha512=hashlib.sha512
     )
 
-    def __init__(self, name='', depends='', directory=None, path='',
+    def __init__(self, name='', depends=None, directory=None, path='',
                  resource=None, compressed=None, include=True, unique=False,
                  unique_prefix='++webresource++', hash_algorithm='sha384',
                  group=None, url=None, crossorigin=None, referrerpolicy=None,
@@ -83,7 +83,7 @@ class Resource(ResourceMixin):
         """Base class for resources.
 
         :param name: The resource unique name.
-        :param depends: Optional name of dependency resource.
+        :param depends: Optional name or list of names of dependency resources.
         :param directory: Directory containing the resource files.
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
@@ -107,7 +107,10 @@ class Resource(ResourceMixin):
         if resource is None and url is None:
             raise ResourceError('Either resource or url must be given')
         super(Resource, self).__init__(name=name, path=path, include=include)
-        self.depends = depends
+        self.depends = (
+            (depends if isinstance(depends, (list, tuple)) else [depends])
+            if depends else None
+        )
         self.directory = directory
         self.resource = resource
         self.compressed = compressed
@@ -231,7 +234,7 @@ class ScriptResource(Resource):
     """A Javascript resource.
     """
 
-    def __init__(self, name='', depends='', directory=None, path='',
+    def __init__(self, name='', depends=None, directory=None, path='',
                  resource=None, compressed=None, include=True, unique=False,
                  unique_prefix='++webresource++', hash_algorithm='sha384',
                  group=None, url=None, crossorigin=None, referrerpolicy=None,
@@ -240,7 +243,7 @@ class ScriptResource(Resource):
         """Create script resource.
 
         :param name: The resource unique name.
-        :param depends: Optional name of dependency resource.
+        :param depends: Optional name or list of names of dependency resources.
         :param directory: Directory containing the resource files.
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
@@ -330,7 +333,7 @@ class LinkResource(Resource):
     """A Link Resource.
     """
 
-    def __init__(self, name='', depends='', directory=None, path='',
+    def __init__(self, name='', depends=None, directory=None, path='',
                  resource=None, compressed=None, include=True, unique=False,
                  unique_prefix='++webresource++', hash_algorithm='sha384',
                  group=None, url=None, crossorigin=None, referrerpolicy=None,
@@ -339,7 +342,7 @@ class LinkResource(Resource):
         """Create link resource.
 
         :param name: The resource unique name.
-        :param depends: Optional name of dependency resource.
+        :param depends: Optional name or list of names of dependency resources.
         :param directory: Directory containing the resource files.
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
@@ -404,7 +407,7 @@ class StyleResource(LinkResource):
     """A Stylesheet Resource.
     """
 
-    def __init__(self, name='', depends='', directory=None, path='',
+    def __init__(self, name='', depends=None, directory=None, path='',
                  resource=None, compressed=None, include=True, unique=False,
                  unique_prefix='++webresource++', hash_algorithm='sha384',
                  group=None, url=None, crossorigin=None, referrerpolicy=None,
@@ -413,7 +416,7 @@ class StyleResource(LinkResource):
         """Create link resource.
 
         :param name: The resource unique name.
-        :param depends: Optional name of dependency resource.
+        :param depends: Optional name or list of names of dependency resources.
         :param directory: Directory containing the resource files.
         :param path: URL path for HTML tag link creation.
         :param resource: Resource file.
@@ -521,8 +524,8 @@ class ResourceMissingDependencyError(ResourceError):
     """Resource depends on a missing resource.
     """
 
-    def __init__(self, resources):
-        msg = 'Resource define missing dependency: {}'.format(resources)
+    def __init__(self, resource):
+        msg = 'Resource defines missing dependency: {}'.format(resource)
         super(ResourceMissingDependencyError, self).__init__(msg)
 
 
@@ -593,19 +596,30 @@ class ResourceResolver(object):
                 ret.append(resource)
                 handled[resource.name] = resource
                 resources.remove(resource)
-            elif resource.depends not in names:
-                raise ResourceMissingDependencyError(resource)
+            else:
+                for dependency_name in resource.depends:
+                    if dependency_name not in names:
+                        raise ResourceMissingDependencyError(resource)
         count = len(resources)
         while count > 0:
             count -= 1
             for resource in resources[:]:
-                if resource.depends in handled:
-                    dependency = handled[resource.depends]
-                    index = ret.index(dependency)
-                    ret.insert(index + 1, resource)
-                    handled[resource.name] = resource
-                    resources.remove(resource)
-                    break
+                hook_idx = 0
+                not_yet = False
+                for dependency_name in resource.depends:
+                    if dependency_name in handled:
+                        dependency = handled[dependency_name]
+                        dep_idx = ret.index(dependency)
+                        hook_idx = dep_idx if dep_idx > hook_idx else hook_idx
+                    else:
+                        not_yet = True
+                        break
+                if not_yet:
+                    continue
+                ret.insert(hook_idx + 1, resource)
+                handled[resource.name] = resource
+                resources.remove(resource)
+                break
         if resources:
             raise ResourceCircularDependencyError(resources)
         return ret

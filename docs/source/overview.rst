@@ -29,7 +29,8 @@ the minified version of the resource, which gets considered if Webresource
 is used in production mode. ``path`` defines the path part of the URL at which
 this resource is published.
 
-Dependencies between resources are defined by passing ``depends`` argument:
+Dependencies between resources are defined by passing ``depends`` argument,
+which can be a single dependency or multiple dependencies as tuple or list:
 
 .. code-block:: python
 

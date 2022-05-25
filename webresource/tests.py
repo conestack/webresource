@@ -71,7 +71,7 @@ class TestWebresource(unittest.TestCase):
         resource = Resource(name='res', resource='res.ext')
         self.assertIsInstance(resource, ResourceMixin)
         self.assertEqual(resource.name, 'res')
-        self.assertEqual(resource.depends, '')
+        self.assertEqual(resource.depends, None)
         self.assertTrue(resource.directory.endswith(np('/webresource')))
         self.assertEqual(resource.path, '')
         self.assertEqual(resource.resource, 'res.ext')
@@ -86,7 +86,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.type_, None)
         self.assertEqual(
             repr(resource),
-            '<Resource name="res", depends="">'
+            '<Resource name="res", depends="None">'
         )
 
         resource = Resource(name='res', directory='./dir', resource='res.ext')
@@ -215,7 +215,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(script.nomodule, None)
         self.assertEqual(
             repr(script),
-            '<ScriptResource name="js_res", depends="">'
+            '<ScriptResource name="js_res", depends="None">'
         )
         self.assertEqual(
             script.render('https://tld.org'),
@@ -267,7 +267,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(link.title, None)
         self.assertEqual(
             repr(link),
-            '<LinkResource name="icon_res", depends="">'
+            '<LinkResource name="icon_res", depends="None">'
         )
         link.rel = 'icon'
         link.type_ = 'image/png'
@@ -284,7 +284,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(style.rel, 'stylesheet')
         self.assertEqual(
             repr(style),
-            '<StyleResource name="css_res", depends="">'
+            '<StyleResource name="css_res", depends="None">'
         )
         self.assertEqual(style.render('https://tld.org'), (
             '<link href="https://tld.org/res.css" media="all" '
@@ -315,15 +315,15 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceCircularDependencyError([resource])
         self.assertEqual(str(err), (
             'Resources define circular dependencies: '
-            '[<Resource name="res1", depends="res2">]'
+            '[<Resource name="res1", depends="[\'res2\']">]'
         ))
 
     def test_ResourceMissingDependencyError(self):
         resource = Resource(name='res', resource='res.ext', depends='missing')
         err = wr.ResourceMissingDependencyError(resource)
         self.assertEqual(str(err), (
-            'Resource define missing dependency: '
-            '<Resource name="res", depends="missing">'
+            'Resource defines missing dependency: '
+            '<Resource name="res", depends="[\'missing\']">'
         ))
 
     def test_ResourceResolver__resolve_paths(self):
@@ -448,6 +448,24 @@ class TestWebresource(unittest.TestCase):
 
         resolver = wr.ResourceResolver([res1, res2])
         self.assertRaises(wr.ResourceMissingDependencyError, resolver.resolve)
+
+        res1 = Resource(name='res1', resource='res1.ext', depends=['res2', 'res4'])
+        res2 = Resource(name='res2', resource='res2.ext', depends=['res3', 'res4'])
+        res3 = Resource(name='res3', resource='res3.ext', depends=['res4', 'res5'])
+        res4 = Resource(name='res4', resource='res4.ext', depends='res5')
+        res5 = Resource(name='res5', resource='res5.ext')
+
+        resolver = wr.ResourceResolver([res1, res2, res3, res4, res5])
+        self.assertEqual(resolver.resolve(), [res5, res4, res3, res2, res1])
+
+        resolver = wr.ResourceResolver([res5, res4, res3, res2, res1])
+        self.assertEqual(resolver.resolve(), [res5, res4, res3, res2, res1])
+
+        resolver = wr.ResourceResolver([res4, res5, res2, res3, res1])
+        self.assertEqual(resolver.resolve(), [res5, res4, res3, res2, res1])
+
+        resolver = wr.ResourceResolver([res1, res3, res2, res5, res4])
+        self.assertEqual(resolver.resolve(), [res5, res4, res3, res2, res1])
 
     def test_ResourceRenderer(self):
         resources = wr.ResourceGroup('res', path='res')
