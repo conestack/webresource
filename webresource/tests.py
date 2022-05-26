@@ -49,10 +49,22 @@ class TestWebresource(unittest.TestCase):
         self.assertTrue(config.development)
 
     def test_ResourceMixin(self):
-        mixin = ResourceMixin(name='name', path='path', include=True)
+        mixin = ResourceMixin(
+            name='name', path='path', include=True
+        )
         self.assertEqual(mixin.name, 'name')
         self.assertEqual(mixin.path, 'path')
         self.assertEqual(mixin.include, True)
+        self.assertEqual(mixin.directory, None)
+
+        mixin.directory = '/dir'
+        self.assertEqual(mixin.directory, '/dir')
+
+        mixin.directory = './dir'
+        self.assertTrue(mixin.directory.endswith(np('/webresource/dir')))
+
+        mixin.directory = './dir/../other'
+        self.assertTrue(mixin.directory.endswith(np('/webresource/other')))
 
         def include():
             return False
@@ -72,7 +84,7 @@ class TestWebresource(unittest.TestCase):
         self.assertIsInstance(resource, ResourceMixin)
         self.assertEqual(resource.name, 'res')
         self.assertEqual(resource.depends, None)
-        self.assertTrue(resource.directory.endswith(np('/webresource')))
+        self.assertEqual(resource.directory, None)
         self.assertEqual(resource.path, '')
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
@@ -89,14 +101,10 @@ class TestWebresource(unittest.TestCase):
             '<Resource name="res", depends="None">'
         )
 
-        resource = Resource(name='res', directory='./dir', resource='res.ext')
-        self.assertTrue(resource.directory.endswith(np('/webresource/dir')))
-        resource = Resource(
-            name='res',
-            directory='./dir/../other',
-            resource='res.ext'
-        )
-        self.assertTrue(resource.directory.endswith(np('/webresource/other')))
+        resource = Resource(name='res', resource='res.ext')
+        self.assertEqual(resource.file_name, 'res.ext')
+        with self.assertRaises(wr.ResourceError):
+            resource.file_path
 
         resource = Resource(name='res', directory='/dir', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
@@ -304,6 +312,13 @@ class TestWebresource(unittest.TestCase):
         group.add(other)
         self.assertEqual(group.members, [res, other])
         self.assertRaises(wr.ResourceError, group.add, object())
+
+        group = wr.ResourceGroup(name='groupname', directory='/path/to/dir')
+        group.add(wr.ScriptResource(name='res1', resource='res1.js'))
+        self.assertEqual(group.directory, group.members[0].directory)
+
+        wr.ScriptResource(name='res2', resource='res2.js', group=group)
+        self.assertEqual(group.directory, group.members[1].directory)
 
     def test_ResourceConflictError(self):
         counter = Counter(['a', 'b', 'b', 'c', 'c'])
@@ -531,6 +546,7 @@ class TestWebresource(unittest.TestCase):
         # check if unique raises on render b/c file does not exist.
         wr.ScriptResource(
             name='js2',
+            directory='.',
             resource='script2.js',
             compressed='script2.min.js',
             group=resources,
@@ -590,6 +606,7 @@ class TestWebresource(unittest.TestCase):
         # check if unique raises on is catched on render and turned into
         wr.ScriptResource(
             name='js2',
+            directory='.',
             resource='script2.js',
             compressed='script2.min.js',
             group=resources,

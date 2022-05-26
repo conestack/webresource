@@ -34,11 +34,30 @@ class ResourceMixin(object):
     """Mixin for ``Resource`` and ``ResourceGroup``.
     """
 
-    def __init__(self, name='', path='', include=True):
+    def __init__(self, name='', directory=None, path='',
+                 include=True, group=None):
         self.name = name
+        self.directory = directory
         self.path = path
         self.include = include
         self.resolved_path = ''
+        if group:
+            group.add(self)
+
+    @property
+    def directory(self):
+        return self._directory
+
+    @directory.setter
+    def directory(self, directory):
+        if directory is None:
+            self._directory = None
+            return
+        elif directory == '.':
+            directory = self._module_directory()
+        elif directory.startswith('.'):
+            directory = os.path.join(self._module_directory(), directory)
+        self._directory = os.path.abspath(directory)
 
     @property
     def include(self):
@@ -59,6 +78,10 @@ class ResourceMixin(object):
     @resolved_path.setter
     def resolved_path(self, path):
         self._resolved_path = path
+
+    def _module_directory(self):
+        module = inspect.getmodule(inspect.currentframe().f_back)
+        return os.path.dirname(os.path.abspath(module.__file__))
 
 
 class ResourceError(ValueError):
@@ -106,36 +129,24 @@ class Resource(ResourceMixin):
         """
         if resource is None and url is None:
             raise ResourceError('Either resource or url must be given')
-        super(Resource, self).__init__(name=name, path=path, include=include)
+        super(Resource, self).__init__(
+            name=name, directory=directory, path=path,
+            include=include, group=group
+        )
         self.depends = (
             (depends if isinstance(depends, (list, tuple)) else [depends])
             if depends else None
         )
-        self.directory = directory
         self.resource = resource
         self.compressed = compressed
         self.unique = unique
         self.unique_prefix = unique_prefix
         self.hash_algorithm = hash_algorithm
         self.file_hash = None
-        if group:
-            group.add(self)
         self.url = url
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
-
-    @property
-    def directory(self):
-        return self._directory
-
-    @directory.setter
-    def directory(self, directory):
-        if not directory:
-            directory = self._module_directory()
-        elif directory.startswith('.'):
-            directory = os.path.join(self._module_directory(), directory)
-        self._directory = os.path.abspath(directory)
 
     @property
     def file_name(self):
@@ -149,7 +160,10 @@ class Resource(ResourceMixin):
     def file_path(self):
         """Absolute resource file path depending on operation mode.
         """
-        return os.path.join(self.directory, self.file_name)
+        directory = self.directory
+        if not directory:
+            raise ResourceError('No directory set on resource.')
+        return os.path.join(directory, self.file_name)
 
     @property
     def file_data(self):
@@ -215,10 +229,6 @@ class Resource(ResourceMixin):
         if not closing_tag:
             return u'<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
         return u'<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
-
-    def _module_directory(self):
-        module = inspect.getmodule(inspect.currentframe().f_back)
-        return os.path.dirname(os.path.abspath(module.__file__))
 
     def __repr__(self):
         return (
@@ -458,19 +468,22 @@ class ResourceGroup(ResourceMixin):
     """A resource group.
     """
 
-    def __init__(self, name='', path='', include=True, group=None):
+    def __init__(self, name='', directory=None, path='',
+                 include=True, group=None):
         """Create resource group.
 
         :param name: The resource group name.
+        :param directory: Directory containing the resource files.
         :param path: Optional URL path for HTML tag link creation. Takes
             precedence over group members paths.
         :param include: Flag or callback function returning a flag whether to
             include the resource group.
         :param group: Optional resource group instance.
         """
-        super(ResourceGroup, self).__init__(name=name, path=path, include=include)
-        if group:
-            group.add(self)
+        super(ResourceGroup, self).__init__(
+            name=name, directory=directory, path=path,
+            include=include, group=group
+        )
         self._members = []
 
     @property
@@ -489,6 +502,8 @@ class ResourceGroup(ResourceMixin):
                 'Resource group can only contain instances '
                 'of ``ResourceGroup`` or ``Resource``'
             )
+        if self.directory:
+            member.directory = self.directory
         self._members.append(member)
 
     def __repr__(self):
