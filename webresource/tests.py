@@ -58,7 +58,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(mixin.directory, None)
 
         mixin.directory = '/dir'
-        self.assertEqual(mixin.directory, os.path.join(os.path.sep, 'dir'))
+        self.assertTrue(mixin.directory.endswith(os.path.join(os.path.sep, 'dir')))
 
         mixin.directory = './dir'
         self.assertTrue(mixin.directory.endswith(np('/webresource/dir')))
