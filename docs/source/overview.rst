@@ -140,6 +140,13 @@ group path takes precedence over its members paths:
 
     scripts = wr.ResourceGroup(name='scripts', path='js')
 
+A group can define the directory for all members. The directory gets set on the
+member on ``add``, but only if member not defines directory on its own:
+
+.. code-block:: python
+
+    scripts = wr.ResourceGroup(name='scripts', directory='./scripts')
+
 To control whether an entire group should be included, define an ``include``
 callback funtion or flag.
 

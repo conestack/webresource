@@ -4,6 +4,9 @@ Changelog
 1.1 (unreleased)
 ----------------
 
+- ``ResourceGroup`` can define a directory for contained resources.
+  [rnix]
+
 - Resources can define multiple dependencies.
   [rnix]
 
