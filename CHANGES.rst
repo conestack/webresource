@@ -7,6 +7,9 @@ Changelog
 - ``ResourceGroup`` can define a directory for contained resources.
   [rnix]
 
+- ``Resource.directory`` no longer gets set to package path by default but
+  remains ``None``.
+
 - Resources can define multiple dependencies.
   [rnix]
 
