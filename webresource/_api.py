@@ -332,7 +332,48 @@ class ScriptResource(Resource):
         })
 
 
-class LinkResource(Resource):
+class LinkMixin(Resource):
+    """Mixin class for link resources."""
+
+    def __init__(
+        self, name='', depends=None, directory=None, path='',
+        resource=None, compressed=None, include=True, unique=False,
+        unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
+        url=None, crossorigin=None, referrerpolicy=None, type_=None,
+        hreflang=None, media=None, rel=None, sizes=None, title=None
+    ):
+        super(LinkMixin, self).__init__(
+            name=name, depends=depends, directory=directory, path=path,
+            resource=resource, compressed=compressed, include=include,
+            unique=unique, unique_prefix=unique_prefix,
+            hash_algorithm=hash_algorithm, group=group, url=url,
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
+        )
+        self.hreflang = hreflang
+        self.media = media
+        self.rel = rel
+        self.sizes = sizes
+        self.title = title
+
+    def render(self, base_url):
+        """Renders the resource HTML ``link`` tag.
+
+        :param base_url: The base URL to create the URL resource.
+        """
+        return self._render_tag('link', False, **{
+            'href': self.resource_url(base_url),
+            'crossorigin': self.crossorigin,
+            'referrerpolicy': self.referrerpolicy,
+            'type': self.type_,
+            'hreflang': self.hreflang,
+            'media': self.media,
+            'rel': self.rel,
+            'sizes': self.sizes,
+            'title': self.title
+        })
+
+
+class LinkResource(LinkMixin):
     """A Link Resource."""
 
     def __init__(
@@ -380,33 +421,13 @@ class LinkResource(Resource):
             resource=resource, compressed=compressed, include=include,
             unique=unique, unique_prefix=unique_prefix,
             hash_algorithm=hash_algorithm, group=group, url=url,
-            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_=type_, hreflang=hreflang, media=media, rel=rel, sizes=sizes,
+            title=title
         )
-        self.hreflang = hreflang
-        self.media = media
-        self.rel = rel
-        self.sizes = sizes
-        self.title = title
-
-    def render(self, base_url):
-        """Renders the resource HTML ``link`` tag.
-
-        :param base_url: The base URL to create the URL resource.
-        """
-        return self._render_tag('link', False, **{
-            'href': self.resource_url(base_url),
-            'crossorigin': self.crossorigin,
-            'referrerpolicy': self.referrerpolicy,
-            'type': self.type_,
-            'hreflang': self.hreflang,
-            'media': self.media,
-            'rel': self.rel,
-            'sizes': self.sizes,
-            'title': self.title
-        })
 
 
-class StyleResource(LinkResource):
+class StyleResource(LinkMixin):
     """A Stylesheet Resource."""
 
     def __init__(
@@ -414,7 +435,7 @@ class StyleResource(LinkResource):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
-        media='all', rel='stylesheet', sizes=None, title=None
+        media='all', rel='stylesheet', title=None
     ):
         """Create link resource.
 

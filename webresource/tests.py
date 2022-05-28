@@ -2,6 +2,7 @@
 from collections import Counter
 from webresource._api import (
     is_py3,
+    LinkMixin,
     Resource,
     ResourceConfig,
     ResourceMixin
@@ -266,8 +267,8 @@ class TestWebresource(unittest.TestCase):
         wr.config.development = True
         self.assertNotEqual(script.integrity, 'sha384-{}'.format(hash_))
 
-    def test_LinkResource(self):
-        link = wr.LinkResource(name='icon_res', resource='icon.png')
+    def test_LinkMixin(self):
+        link = LinkMixin(name='link_res', resource='resource.md')
         self.assertEqual(link.hreflang, None)
         self.assertEqual(link.media, None)
         self.assertEqual(link.rel, None)
@@ -275,18 +276,35 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(link.title, None)
         self.assertEqual(
             repr(link),
+            '<LinkMixin name="link_res", depends="None">'
+        )
+        link.hreflang = 'en'
+        link.media = 'screen'
+        link.rel = 'alternate'
+        link.type_ = 'text/markdown'
+        self.assertEqual(link.render('https://tld.org'), (
+            '<link href="https://tld.org/resource.md" hreflang="en" '
+            'media="screen" rel="alternate" type="text/markdown" />'
+        ))
+
+    def test_LinkResource(self):
+        link = wr.LinkResource(name='icon_res', resource='icon.png')
+        self.assertIsInstance(link, LinkMixin)
+        self.assertEqual(
+            repr(link),
             '<LinkResource name="icon_res", depends="None">'
         )
         link.rel = 'icon'
         link.type_ = 'image/png'
-        self.assertEqual(
-            link.render('https://tld.org'),
-            '<link href="https://tld.org/icon.png" rel="icon" type="image/png" />'
-        )
+        link.sizes = '16x16'
+        self.assertEqual(link.render('https://tld.org'), (
+            '<link href="https://tld.org/icon.png" rel="icon" '
+            'sizes="16x16" type="image/png" />'
+        ))
 
     def test_StyleResource(self):
         style = wr.StyleResource(name='css_res', resource='res.css')
-        self.assertIsInstance(style, wr.LinkResource)
+        self.assertIsInstance(style, LinkMixin)
         self.assertEqual(style.type_, 'text/css')
         self.assertEqual(style.media, 'all')
         self.assertEqual(style.rel, 'stylesheet')
