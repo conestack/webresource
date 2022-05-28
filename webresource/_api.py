@@ -33,16 +33,30 @@ class ResourceMixin(object):
     """Mixin for ``Resource`` and ``ResourceGroup``."""
 
     def __init__(
-        self, name='', directory=None, path='', include=True, group=None
+        self, name='', directory=None, path=None, include=True, group=None
     ):
         self.name = name
         self.directory = directory
         self.path = path
         self.include = include
-        self.resolved_path = ''
         self.parent = None
         if group:
             group.add(self)
+
+    @property
+    def path(self):
+        if self._path is not None:
+            return self._path
+        parent = self.parent
+        while parent is not None:
+            parent_path = parent.path
+            if parent_path:
+                return parent_path
+            parent = parent.parent
+
+    @path.setter
+    def path(self, path):
+        self._path = path
 
     @property
     def directory(self):
@@ -74,16 +88,6 @@ class ResourceMixin(object):
     def include(self, include):
         self._include = include
 
-    @property
-    def resolved_path(self):
-        if self._resolved_path:
-            return self._resolved_path
-        return self.path
-
-    @resolved_path.setter
-    def resolved_path(self, path):
-        self._resolved_path = path
-
     def _module_directory(self):
         module = inspect.getmodule(inspect.currentframe().f_back)
         return os.path.dirname(os.path.abspath(module.__file__))
@@ -103,7 +107,7 @@ class Resource(ResourceMixin):
     )
 
     def __init__(
-        self, name='', depends=None, directory=None, path='',
+        self, name='', depends=None, directory=None, path=None,
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None
@@ -203,10 +207,10 @@ class Resource(ResourceMixin):
         """
         if self.url is not None:
             return self.url
-        path = self.resolved_path.strip('/')
         parts = [base_url.strip('/')]
+        path = self.path
         if path:
-            parts.append(path)
+            parts.append(path.strip('/'))
         if self.unique:
             parts.append(self.unique_key)
         parts.append(self.file_name)
@@ -245,7 +249,7 @@ class ScriptResource(Resource):
     """A Javascript resource."""
 
     def __init__(
-        self, name='', depends=None, directory=None, path='',
+        self, name='', depends=None, directory=None, path=None,
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
@@ -344,7 +348,7 @@ class LinkMixin(Resource):
     """Mixin class for link resources."""
 
     def __init__(
-        self, name='', depends=None, directory=None, path='',
+        self, name='', depends=None, directory=None, path=None,
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
@@ -385,7 +389,7 @@ class LinkResource(LinkMixin):
     """A Link Resource."""
 
     def __init__(
-        self, name='', depends=None, directory=None, path='',
+        self, name='', depends=None, directory=None, path=None,
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
@@ -439,7 +443,7 @@ class StyleResource(LinkMixin):
     """A Stylesheet Resource."""
 
     def __init__(
-        self, name='', depends=None, directory=None, path='',
+        self, name='', depends=None, directory=None, path=None,
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
@@ -490,7 +494,7 @@ class ResourceGroup(ResourceMixin):
     """A resource group."""
 
     def __init__(
-        self, name='', directory=None, path='', include=True, group=None
+        self, name='', directory=None, path=None, include=True, group=None
     ):
         """Create resource group.
 
@@ -585,18 +589,6 @@ class ResourceResolver(object):
                 )
         self.members = members
 
-    def _resolve_paths(self, members=None, path=''):
-        if members is None:
-            members = self.members
-        for member in members:
-            if path:
-                member.resolved_path = path
-            if isinstance(member, ResourceGroup):
-                self._resolve_paths(
-                    members=member.members,
-                    path=member.resolved_path
-                )
-
     def _flat_resources(self, members=None):
         if members is None:
             members = self.members
@@ -618,7 +610,6 @@ class ResourceResolver(object):
         :raise ResourceMissingDependencyError: Dependency resource not included
         :raise ResourceCircularDependencyError: Circular dependency defined.
         """
-        self._resolve_paths()
         resources = self._flat_resources()
         names = [res.name for res in resources]
         counter = Counter(names)

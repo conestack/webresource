@@ -59,6 +59,14 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(mixin.directory, None)
         self.assertEqual(mixin.parent, None)
 
+        mixin.parent = ResourceMixin(path='other')
+        mixin.path = None
+        self.assertEqual(mixin.path, 'other')
+
+        mixin.parent.parent = ResourceMixin(path='root')
+        mixin.parent.path = None
+        self.assertEqual(mixin.path, 'root')
+
         mixin.directory = '/dir'
         self.assertTrue(mixin.directory.endswith(os.path.join(os.path.sep, 'dir')))
 
@@ -68,15 +76,19 @@ class TestWebresource(unittest.TestCase):
         mixin.directory = './dir/../other'
         self.assertTrue(mixin.directory.endswith(np('/webresource/other')))
 
+        mixin.parent = ResourceMixin(directory='/other')
+        mixin.directory = None
+        self.assertTrue(mixin.directory.endswith(os.path.join(os.path.sep, 'other')))
+
+        mixin.parent.parent = ResourceMixin(directory='/root')
+        mixin.parent.directory = None
+        self.assertTrue(mixin.directory.endswith(os.path.join(os.path.sep, 'root')))
+
         def include():
             return False
 
         mixin = ResourceMixin(name='name', path='path', include=include)
         self.assertFalse(mixin.include)
-
-        self.assertEqual(mixin.resolved_path, 'path')
-        mixin.resolved_path = 'other'
-        self.assertEqual(mixin.resolved_path, 'other')
 
     @temp_directory
     def test_Resource(self, tempdir):
@@ -87,7 +99,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.name, 'res')
         self.assertEqual(resource.depends, None)
         self.assertEqual(resource.directory, None)
-        self.assertEqual(resource.path, '')
+        self.assertEqual(resource.path, None)
         self.assertEqual(resource.resource, 'res.ext')
         self.assertEqual(resource.compressed, None)
         self.assertEqual(resource.include, True)
@@ -144,10 +156,6 @@ class TestWebresource(unittest.TestCase):
         resource = Resource(name='res', resource='res.ext', path='resources')
         resource_url = resource.resource_url('https://tld.org')
         self.assertEqual(resource_url, 'https://tld.org/resources/res.ext')
-
-        resource.resolved_path = 'other'
-        resource_url = resource.resource_url('https://tld.org')
-        self.assertEqual(resource_url, 'https://tld.org/other/res.ext')
 
         resource = Resource(
             name='res',
@@ -332,13 +340,6 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(group.members, [res, other])
         self.assertRaises(wr.ResourceError, group.add, object())
 
-        group = wr.ResourceGroup(name='groupname', directory='/path/to/dir')
-        group.add(wr.ScriptResource(name='res1', resource='res1.js'))
-        self.assertEqual(group.directory, group.members[0].directory)
-
-        wr.ScriptResource(name='res2', resource='res2.js', group=group)
-        self.assertEqual(group.directory, group.members[1].directory)
-
         root_group = wr.ResourceGroup(name='root')
         member_group = wr.ResourceGroup(name='member', group=root_group)
         member_res = wr.ScriptResource(
@@ -348,6 +349,18 @@ class TestWebresource(unittest.TestCase):
         )
         self.assertTrue(member_group.parent is root_group)
         self.assertTrue(member_res.parent is member_group)
+
+        group = wr.ResourceGroup(
+            name='groupname',
+            path='group_path',
+            directory='/path/to/dir')
+        group.add(wr.ResourceGroup(name='group1'))
+        wr.ResourceGroup(name='group2', group=group)
+
+        self.assertEqual(group.path, group.members[0].path)
+        self.assertEqual(group.path, group.members[1].path)
+        self.assertEqual(group.directory, group.members[0].directory)
+        self.assertEqual(group.directory, group.members[1].directory)
 
     def test_ResourceConflictError(self):
         counter = Counter(['a', 'b', 'b', 'c', 'c'])
@@ -369,62 +382,6 @@ class TestWebresource(unittest.TestCase):
             'Resource defines missing dependency: '
             '<Resource name="res", depends="[\'missing\']">'
         ))
-
-    def test_ResourceResolver__resolve_paths(self):
-        res1 = Resource(name='res1', resource='res1.ext')
-        res2 = Resource(name='res2', resource='res2.ext', path='path')
-
-        resolver = wr.ResourceResolver([res1, res2])
-        resolver._resolve_paths()
-        self.assertEqual(res1.resolved_path, '')
-        self.assertEqual(res2.resolved_path, 'path')
-
-        group = wr.ResourceGroup(name='group')
-        group.add(res1)
-        group.add(res2)
-
-        resolver = wr.ResourceResolver([group])
-        resolver._resolve_paths()
-        self.assertEqual(res1.resolved_path, '')
-        self.assertEqual(res2.resolved_path, 'path')
-
-        group.path = 'other'
-        resolver._resolve_paths()
-        self.assertEqual(res1.resolved_path, 'other')
-        self.assertEqual(res2.resolved_path, 'other')
-
-        group1 = wr.ResourceGroup(name='group1')
-
-        group2 = wr.ResourceGroup(name='group2', path='group2', group=group1)
-        res1 = Resource(name='res1', resource='res1.ext', group=group2)
-
-        group3 = wr.ResourceGroup(name='group3', path='group3', group=group1)
-        res2 = Resource(name='res2', resource='res2.ext', group=group3)
-
-        resolver = wr.ResourceResolver([group1])
-        resolver._resolve_paths()
-        self.assertEqual(res1.resolved_path, 'group2')
-        self.assertEqual(res2.resolved_path, 'group3')
-
-        group1 = wr.ResourceGroup(name='group1', path='group1')
-
-        group2 = wr.ResourceGroup(name='group2', group=group1)
-        res1 = Resource(name='res1', resource='res1.ext', group=group2)
-        res2 = Resource(
-            name='res2',
-            resource='res2.ext',
-            path='path',
-            group=group2
-        )
-
-        group3 = wr.ResourceGroup(name='group3', path='group3', group=group1)
-        res3 = Resource(name='res3', resource='res3.ext', group=group3)
-
-        resolver = wr.ResourceResolver([group1])
-        resolver._resolve_paths()
-        self.assertEqual(res1.resolved_path, 'group1')
-        self.assertEqual(res2.resolved_path, 'group1')
-        self.assertEqual(res3.resolved_path, 'group1')
 
     def test_ResourceResolver__flat_resources(self):
         self.assertRaises(wr.ResourceError, wr.ResourceResolver, object())
