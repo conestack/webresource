@@ -40,12 +40,20 @@ class ResourceMixin(object):
         self.path = path
         self.include = include
         self.resolved_path = ''
+        self.parent = None
         if group:
             group.add(self)
 
     @property
     def directory(self):
-        return self._directory
+        if self._directory is not None:
+            return self._directory
+        parent = self.parent
+        while parent is not None:
+            parent_directory = parent.directory
+            if parent_directory:
+                return parent_directory
+            parent = parent.parent
 
     @directory.setter
     def directory(self, directory):
@@ -519,8 +527,7 @@ class ResourceGroup(ResourceMixin):
                 'Resource group can only contain instances '
                 'of ``ResourceGroup`` or ``Resource``'
             )
-        if self.directory and not member.directory:
-            member.directory = self.directory
+        member.parent = self
         self._members.append(member)
 
     def __repr__(self):

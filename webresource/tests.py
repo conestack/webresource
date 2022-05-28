@@ -57,6 +57,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(mixin.path, 'path')
         self.assertEqual(mixin.include, True)
         self.assertEqual(mixin.directory, None)
+        self.assertEqual(mixin.parent, None)
 
         mixin.directory = '/dir'
         self.assertTrue(mixin.directory.endswith(os.path.join(os.path.sep, 'dir')))
@@ -337,6 +338,16 @@ class TestWebresource(unittest.TestCase):
 
         wr.ScriptResource(name='res2', resource='res2.js', group=group)
         self.assertEqual(group.directory, group.members[1].directory)
+
+        root_group = wr.ResourceGroup(name='root')
+        member_group = wr.ResourceGroup(name='member', group=root_group)
+        member_res = wr.ScriptResource(
+            name='res',
+            resource='res.js',
+            group=member_group
+        )
+        self.assertTrue(member_group.parent is root_group)
+        self.assertTrue(member_res.parent is member_group)
 
     def test_ResourceConflictError(self):
         counter = Counter(['a', 'b', 'b', 'c', 'c'])

@@ -4,6 +4,10 @@ Changelog
 1.1 (unreleased)
 ----------------
 
+- Introduce ``parent`` attribute on ``ResourceMixin``. Gets set in
+  ``ResourceGroup.add`` method to provide hierarchy information.
+  [rnix]
+
 - ``LinkResource`` and ``StyleResource`` have common superclass ``LinkMixin``
   now. ``StyleResource`` no longer derives from ``LinkResource``. This way,
   link and style resources respective subclasses of it can be differentiated
