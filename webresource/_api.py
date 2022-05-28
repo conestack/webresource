@@ -514,19 +514,34 @@ class ResourceGroup(ResourceMixin):
 
     @property
     def members(self):
-        """List of group members."""
+        """List of group members.
+
+        Group members are either instances of ``Resource`` or ``ResourceGroup``.
+        """
         return self._members
 
     @property
     def scripts(self):
+        """List of all contained ``ScriptResource`` instances.
+
+        Resources from subsequent resource groups are included.
+        """
         return self._filtered_resources(ScriptResource)
 
     @property
     def styles(self):
+        """List of all contained ``StyleResource`` instances.
+
+        Resources from subsequent resource groups are included.
+        """
         return self._filtered_resources(StyleResource)
 
     @property
     def links(self):
+        """List of all contained ``LinkResource`` instances.
+
+        Resources from subsequent resource groups are included.
+        """
         return self._filtered_resources(LinkResource)
 
     def add(self, member):

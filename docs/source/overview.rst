@@ -133,15 +133,15 @@ Groups can be nested:
         group=scripts
     )
 
-A group can be used to define the path for all members. The
-group path takes precedence over its members paths:
+A group can define the default ``path`` for its members. It is taken unless
+a contained group member defines a path on its own:
 
 .. code-block:: python
 
     scripts = wr.ResourceGroup(name='scripts', path='js')
 
-A group can define the directory for all members. The directory gets set on the
-member on ``add``, but only if member not defines directory on its own:
+Same applies for the resource ``directory``. If defined on a resource group,
+is taken unless a contained member overrides it.
 
 .. code-block:: python
 
@@ -214,10 +214,7 @@ A complete example:
     resources.add(script)
 
     resolver = wr.ResourceResolver(resources)
-    renderer = wr.ResourceRenderer(
-        resolver,
-        base_url='https://example.com'
-    )
+    renderer = wr.ResourceRenderer(resolver, base_url='https://tld.org')
 
     rendered = renderer.render()
 
@@ -225,13 +222,13 @@ A complete example:
 
 .. code-block:: html
 
-    <link href="https://example.com/res/icon.png"
+    <link href="https://tld.org/res/icon.png"
           rel="icon" type="image/png" />
-    <link href="https://example.com/res/styles.css" media="all"
+    <link href="https://tld.org/res/styles.css" media="all"
           rel="stylesheet" type="text/css" />
     <link href="https://ext.org/styles.css" media="all"
           rel="stylesheet" type="text/css" />
-    <script src="https://example.com/res/script.min.js"></script>
+    <script src="https://tld.org/res/script.min.js"></script>
 
 
 Debugging

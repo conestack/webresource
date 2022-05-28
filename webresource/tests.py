@@ -527,29 +527,29 @@ class TestWebresource(unittest.TestCase):
             group=resources
         )
         resolver = wr.ResourceResolver(resources)
-        renderer = wr.ResourceRenderer(resolver, base_url='https://example.com')
+        renderer = wr.ResourceRenderer(resolver, base_url='https://tld.org')
 
         rendered = renderer.render()
         self.assertEqual(rendered, (
-            '<link href="https://example.com/res/icon.png" '
+            '<link href="https://tld.org/res/icon.png" '
             'rel="icon" type="image/png" />\n'
-            '<link href="https://example.com/res/styles.css" media="all" '
+            '<link href="https://tld.org/res/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
-            '<script src="https://example.com/res/script.min.js"></script>'
+            '<script src="https://tld.org/res/script.min.js"></script>'
         ))
 
         wr.config.development = True
         rendered = renderer.render()
         self.assertEqual(rendered, (
-            '<link href="https://example.com/res/icon.png" '
+            '<link href="https://tld.org/res/icon.png" '
             'rel="icon" type="image/png" />\n'
-            '<link href="https://example.com/res/styles.css" media="all" '
+            '<link href="https://tld.org/res/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
-            '<script src="https://example.com/res/script.js"></script>'
+            '<script src="https://tld.org/res/script.js"></script>'
         ))
 
         # check if unique raises on render b/c file does not exist.
@@ -588,29 +588,29 @@ class TestWebresource(unittest.TestCase):
         resolver = wr.ResourceResolver(resources)
         renderer = wr.GracefulResourceRenderer(
             resolver,
-            base_url='https://example.com',
+            base_url='https://tld.org',
         )
         rendered = renderer.render()
         self.assertEqual(rendered, (
-            '<link href="https://example.com/res/icon.png" '
+            '<link href="https://tld.org/res/icon.png" '
             'rel="icon" type="image/png" />\n'
-            '<link href="https://example.com/res/styles.css" media="all" '
+            '<link href="https://tld.org/res/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
-            '<script src="https://example.com/res/script.min.js"></script>'
+            '<script src="https://tld.org/res/script.min.js"></script>'
         ))
 
         wr.config.development = True
         rendered = renderer.render()
         self.assertEqual(rendered, (
-            '<link href="https://example.com/res/icon.png" '
+            '<link href="https://tld.org/res/icon.png" '
             'rel="icon" type="image/png" />\n'
-            '<link href="https://example.com/res/styles.css" media="all" '
+            '<link href="https://tld.org/res/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
-            '<script src="https://example.com/res/script.js"></script>'
+            '<script src="https://tld.org/res/script.js"></script>'
         ))
         # check if unique raises on is catched on render and turned into
         wr.ScriptResource(
@@ -635,13 +635,13 @@ class TestWebresource(unittest.TestCase):
         else:  # pragma: nocover
             rendered = renderer.render()
         self.assertEqual(rendered, (
-            '<link href="https://example.com/res/icon.png" '
+            '<link href="https://tld.org/res/icon.png" '
             'rel="icon" type="image/png" />\n'
-            '<link href="https://example.com/res/styles.css" media="all" '
+            '<link href="https://tld.org/res/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
             '<link href="https://ext.org/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
-            '<script src="https://example.com/res/script.js"></script>\n'
+            '<script src="https://tld.org/res/script.js"></script>\n'
             '<!-- Failure to render resource "js2" - details in logs -->'
         ))
 
