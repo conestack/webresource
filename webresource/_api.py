@@ -47,12 +47,8 @@ class ResourceMixin(object):
     def path(self):
         if self._path is not None:
             return self._path
-        parent = self.parent
-        while parent is not None:
-            parent_path = parent.path
-            if parent_path:
-                return parent_path
-            parent = parent.parent
+        if self.parent is not None:
+            return self.parent.path
 
     @path.setter
     def path(self, path):
@@ -62,12 +58,8 @@ class ResourceMixin(object):
     def directory(self):
         if self._directory is not None:
             return self._directory
-        parent = self.parent
-        while parent is not None:
-            parent_directory = parent.directory
-            if parent_directory:
-                return parent_directory
-            parent = parent.parent
+        if self.parent is not None:
+            return self.parent.directory
 
     @directory.setter
     def directory(self, directory):

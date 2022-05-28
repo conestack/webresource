@@ -59,11 +59,11 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(mixin.directory, None)
         self.assertEqual(mixin.parent, None)
 
-        mixin.parent = ResourceMixin(path='other')
+        mixin.parent = ResourceMixin(name='other', path='other')
         mixin.path = None
         self.assertEqual(mixin.path, 'other')
 
-        mixin.parent.parent = ResourceMixin(path='root')
+        mixin.parent.parent = ResourceMixin(name='root', path='root')
         mixin.parent.path = None
         self.assertEqual(mixin.path, 'root')
 
@@ -76,11 +76,11 @@ class TestWebresource(unittest.TestCase):
         mixin.directory = './dir/../other'
         self.assertTrue(mixin.directory.endswith(np('/webresource/other')))
 
-        mixin.parent = ResourceMixin(directory='/other')
+        mixin.parent = ResourceMixin(name='other', directory='/other')
         mixin.directory = None
         self.assertTrue(mixin.directory.endswith(os.path.join(os.path.sep, 'other')))
 
-        mixin.parent.parent = ResourceMixin(directory='/root')
+        mixin.parent.parent = ResourceMixin(name='root', directory='/root')
         mixin.parent.directory = None
         self.assertTrue(mixin.directory.endswith(os.path.join(os.path.sep, 'root')))
 
