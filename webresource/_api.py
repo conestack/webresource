@@ -517,6 +517,18 @@ class ResourceGroup(ResourceMixin):
         """List of group members."""
         return self._members
 
+    @property
+    def scripts(self):
+        return self._filtered_resources(ScriptResource)
+
+    @property
+    def styles(self):
+        return self._filtered_resources(StyleResource)
+
+    @property
+    def links(self):
+        return self._filtered_resources(LinkResource)
+
     def add(self, member):
         """Add member to resource group.
 
@@ -533,6 +545,20 @@ class ResourceGroup(ResourceMixin):
             )
         member.parent = self
         self._members.append(member)
+
+    def _filtered_resources(self, type_, members=None):
+        if members is None:
+            members = self.members
+        resources = []
+        for member in members:
+            if isinstance(member, ResourceGroup):
+                resources += self._filtered_resources(
+                    type_,
+                    members=member.members
+                )
+            elif isinstance(member, type_):
+                resources.append(member)
+        return resources
 
     def __repr__(self):
         return '<{} name="{}">'.format(

@@ -4,13 +4,16 @@ Changelog
 1.1 (unreleased)
 ----------------
 
-- Remove magic path resolving behavior for resources. Path no longer gets
-  overwritten in resolver. It gets now aquired from parent if not set on
-  resource or resource group.
+- Add ``scripts``, ``styles``, and ``links`` properties to ``ResourceGroup``.
   [rnix]
 
 - Introduce ``parent`` attribute on ``ResourceMixin``. Gets set in
   ``ResourceGroup.add`` method to provide hierarchy information.
+  [rnix]
+
+- Remove magic path resolving behavior for resources. Path no longer gets
+  overwritten in resolver. It gets now aquired from parent if not set on
+  resource or resource group.
   [rnix]
 
 - ``LinkResource`` and ``StyleResource`` have common superclass ``LinkMixin``

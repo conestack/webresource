@@ -362,6 +362,29 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(group.directory, group.members[0].directory)
         self.assertEqual(group.directory, group.members[1].directory)
 
+        root = wr.ResourceGroup(name='root')
+        wr.StyleResource(name='root-style', resource='root.css', group=root)
+        wr.ScriptResource(name='root-script', resource='root.js', group=root)
+        wr.LinkResource(name='root-link', resource='root.link', group=root)
+
+        group = wr.ResourceGroup(name='group', group=root)
+        wr.StyleResource(name='group-style', resource='group.css', group=group)
+        wr.ScriptResource(name='group-script', resource='group.js', group=group)
+        wr.LinkResource(name='group-link', resource='group.link', group=group)
+
+        self.assertEqual(
+            sorted([res.name for res in root.scripts]),
+            ['group-script', 'root-script']
+        )
+        self.assertEqual(
+            sorted([res.name for res in root.styles]),
+            ['group-style', 'root-style']
+        )
+        self.assertEqual(
+            sorted([res.name for res in root.links]),
+            ['group-link', 'root-link']
+        )
+
     def test_ResourceConflictError(self):
         counter = Counter(['a', 'b', 'b', 'c', 'c'])
         err = wr.ResourceConflictError(counter)
