@@ -20,8 +20,7 @@ namespace_uuid = uuid.UUID('f3341b2e-f97e-40d2-ad2f-10a08a778877')
 
 
 class ResourceConfig(object):
-    """Config singleton for web resources.
-    """
+    """Config singleton for web resources."""
 
     def __init__(self):
         self.development = False
@@ -31,14 +30,45 @@ config = ResourceConfig()
 
 
 class ResourceMixin(object):
-    """Mixin for ``Resource`` and ``ResourceGroup``.
-    """
+    """Mixin for ``Resource`` and ``ResourceGroup``."""
 
-    def __init__(self, name='', path='', include=True):
+    def __init__(
+        self, name='', directory=None, path=None, include=True, group=None
+    ):
         self.name = name
+        self.directory = directory
         self.path = path
         self.include = include
-        self.resolved_path = ''
+        self.parent = None
+        if group:
+            group.add(self)
+
+    @property
+    def path(self):
+        if self._path is not None:
+            return self._path
+        if self.parent is not None:
+            return self.parent.path
+
+    @path.setter
+    def path(self, path):
+        self._path = path
+
+    @property
+    def directory(self):
+        if self._directory is not None:
+            return self._directory
+        if self.parent is not None:
+            return self.parent.directory
+
+    @directory.setter
+    def directory(self, directory):
+        if directory is None:
+            self._directory = None
+            return
+        elif directory.startswith('.'):
+            directory = os.path.join(self._module_directory(), directory)
+        self._directory = os.path.abspath(directory)
 
     @property
     def include(self):
@@ -50,36 +80,30 @@ class ResourceMixin(object):
     def include(self, include):
         self._include = include
 
-    @property
-    def resolved_path(self):
-        if self._resolved_path:
-            return self._resolved_path
-        return self.path
-
-    @resolved_path.setter
-    def resolved_path(self, path):
-        self._resolved_path = path
+    def _module_directory(self):
+        module = inspect.getmodule(inspect.currentframe().f_back)
+        return os.path.dirname(os.path.abspath(module.__file__))
 
 
 class ResourceError(ValueError):
-    """Resource related exception.
-    """
+    """Resource related exception."""
 
 
 class Resource(ResourceMixin):
-    """A web resource.
-    """
+    """A web resource."""
+
     _hash_algorithms = dict(
         sha256=hashlib.sha256,
         sha384=hashlib.sha384,
         sha512=hashlib.sha512
     )
 
-    def __init__(self, name='', depends=None, directory=None, path='',
-                 resource=None, compressed=None, include=True, unique=False,
-                 unique_prefix='++webresource++', hash_algorithm='sha384',
-                 group=None, url=None, crossorigin=None, referrerpolicy=None,
-                 type_=None):
+    def __init__(
+        self, name='', depends=None, directory=None, path=None,
+        resource=None, compressed=None, include=True, unique=False,
+        unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
+        url=None, crossorigin=None, referrerpolicy=None, type_=None
+    ):
         """Base class for resources.
 
         :param name: The resource unique name.
@@ -106,62 +130,49 @@ class Resource(ResourceMixin):
         """
         if resource is None and url is None:
             raise ResourceError('Either resource or url must be given')
-        super(Resource, self).__init__(name=name, path=path, include=include)
+        super(Resource, self).__init__(
+            name=name, directory=directory, path=path,
+            include=include, group=group
+        )
         self.depends = (
             (depends if isinstance(depends, (list, tuple)) else [depends])
             if depends else None
         )
-        self.directory = directory
         self.resource = resource
         self.compressed = compressed
         self.unique = unique
         self.unique_prefix = unique_prefix
         self.hash_algorithm = hash_algorithm
         self.file_hash = None
-        if group:
-            group.add(self)
         self.url = url
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
 
     @property
-    def directory(self):
-        return self._directory
-
-    @directory.setter
-    def directory(self, directory):
-        if not directory:
-            directory = self._module_directory()
-        elif directory.startswith('.'):
-            directory = os.path.join(self._module_directory(), directory)
-        self._directory = os.path.abspath(directory)
-
-    @property
     def file_name(self):
-        """Resource file name depending on operation mode.
-        """
+        """Resource file name depending on operation mode."""
         if not config.development and self.compressed:
             return self.compressed
         return self.resource
 
     @property
     def file_path(self):
-        """Absolute resource file path depending on operation mode.
-        """
-        return os.path.join(self.directory, self.file_name)
+        """Absolute resource file path depending on operation mode."""
+        directory = self.directory
+        if not directory:
+            raise ResourceError('No directory set on resource.')
+        return os.path.join(directory, self.file_name)
 
     @property
     def file_data(self):
-        """File content of resource depending on operation mode.
-        """
+        """File content of resource depending on operation mode."""
         with open(self.file_path, 'rb') as f:
             return f.read()
 
     @property
     def file_hash(self):
-        """Hash of resource file content.
-        """
+        """Hash of resource file content."""
         if not config.development and self._file_hash is not None:
             return self._file_hash
         hash_func = self._hash_algorithms[self.hash_algorithm]
@@ -188,10 +199,10 @@ class Resource(ResourceMixin):
         """
         if self.url is not None:
             return self.url
-        path = self.resolved_path.strip('/')
         parts = [base_url.strip('/')]
+        path = self.path
         if path:
-            parts.append(path)
+            parts.append(path.strip('/'))
         if self.unique:
             parts.append(self.unique_key)
         parts.append(self.file_name)
@@ -216,10 +227,6 @@ class Resource(ResourceMixin):
             return u'<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
         return u'<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
 
-    def _module_directory(self):
-        module = inspect.getmodule(inspect.currentframe().f_back)
-        return os.path.dirname(os.path.abspath(module.__file__))
-
     def __repr__(self):
         return (
             '<{} name="{}", depends="{}">'
@@ -231,15 +238,15 @@ class Resource(ResourceMixin):
 
 
 class ScriptResource(Resource):
-    """A Javascript resource.
-    """
+    """A Javascript resource."""
 
-    def __init__(self, name='', depends=None, directory=None, path='',
-                 resource=None, compressed=None, include=True, unique=False,
-                 unique_prefix='++webresource++', hash_algorithm='sha384',
-                 group=None, url=None, crossorigin=None, referrerpolicy=None,
-                 type_=None, async_=None, defer=None, integrity=None,
-                 nomodule=None):
+    def __init__(
+        self, name='', depends=None, directory=None, path=None,
+        resource=None, compressed=None, include=True, unique=False,
+        unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
+        url=None, crossorigin=None, referrerpolicy=None, type_=None,
+        async_=None, defer=None, integrity=None, nomodule=None
+    ):
         """Create script resource.
 
         :param name: The resource unique name.
@@ -329,16 +336,57 @@ class ScriptResource(Resource):
         })
 
 
-class LinkResource(Resource):
-    """A Link Resource.
-    """
+class LinkMixin(Resource):
+    """Mixin class for link resources."""
 
-    def __init__(self, name='', depends=None, directory=None, path='',
-                 resource=None, compressed=None, include=True, unique=False,
-                 unique_prefix='++webresource++', hash_algorithm='sha384',
-                 group=None, url=None, crossorigin=None, referrerpolicy=None,
-                 type_=None, hreflang=None, media=None, rel=None, sizes=None,
-                 title=None):
+    def __init__(
+        self, name='', depends=None, directory=None, path=None,
+        resource=None, compressed=None, include=True, unique=False,
+        unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
+        url=None, crossorigin=None, referrerpolicy=None, type_=None,
+        hreflang=None, media=None, rel=None, sizes=None, title=None
+    ):
+        super(LinkMixin, self).__init__(
+            name=name, depends=depends, directory=directory, path=path,
+            resource=resource, compressed=compressed, include=include,
+            unique=unique, unique_prefix=unique_prefix,
+            hash_algorithm=hash_algorithm, group=group, url=url,
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
+        )
+        self.hreflang = hreflang
+        self.media = media
+        self.rel = rel
+        self.sizes = sizes
+        self.title = title
+
+    def render(self, base_url):
+        """Renders the resource HTML ``link`` tag.
+
+        :param base_url: The base URL to create the URL resource.
+        """
+        return self._render_tag('link', False, **{
+            'href': self.resource_url(base_url),
+            'crossorigin': self.crossorigin,
+            'referrerpolicy': self.referrerpolicy,
+            'type': self.type_,
+            'hreflang': self.hreflang,
+            'media': self.media,
+            'rel': self.rel,
+            'sizes': self.sizes,
+            'title': self.title
+        })
+
+
+class LinkResource(LinkMixin):
+    """A Link Resource."""
+
+    def __init__(
+        self, name='', depends=None, directory=None, path=None,
+        resource=None, compressed=None, include=True, unique=False,
+        unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
+        url=None, crossorigin=None, referrerpolicy=None, type_=None,
+        hreflang=None, media=None, rel=None, sizes=None, title=None
+    ):
         """Create link resource.
 
         :param name: The resource unique name.
@@ -377,42 +425,22 @@ class LinkResource(Resource):
             resource=resource, compressed=compressed, include=include,
             unique=unique, unique_prefix=unique_prefix,
             hash_algorithm=hash_algorithm, group=group, url=url,
-            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_=type_, hreflang=hreflang, media=media, rel=rel, sizes=sizes,
+            title=title
         )
-        self.hreflang = hreflang
-        self.media = media
-        self.rel = rel
-        self.sizes = sizes
-        self.title = title
-
-    def render(self, base_url):
-        """Renders the resource HTML ``link`` tag.
-
-        :param base_url: The base URL to create the URL resource.
-        """
-        return self._render_tag('link', False, **{
-            'href': self.resource_url(base_url),
-            'crossorigin': self.crossorigin,
-            'referrerpolicy': self.referrerpolicy,
-            'type': self.type_,
-            'hreflang': self.hreflang,
-            'media': self.media,
-            'rel': self.rel,
-            'sizes': self.sizes,
-            'title': self.title
-        })
 
 
-class StyleResource(LinkResource):
-    """A Stylesheet Resource.
-    """
+class StyleResource(LinkMixin):
+    """A Stylesheet Resource."""
 
-    def __init__(self, name='', depends=None, directory=None, path='',
-                 resource=None, compressed=None, include=True, unique=False,
-                 unique_prefix='++webresource++', hash_algorithm='sha384',
-                 group=None, url=None, crossorigin=None, referrerpolicy=None,
-                 hreflang=None, media='all', rel='stylesheet', sizes=None,
-                 title=None):
+    def __init__(
+        self, name='', depends=None, directory=None, path=None,
+        resource=None, compressed=None, include=True, unique=False,
+        unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
+        url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
+        media='all', rel='stylesheet', title=None
+    ):
         """Create link resource.
 
         :param name: The resource unique name.
@@ -455,31 +483,64 @@ class StyleResource(LinkResource):
 
 
 class ResourceGroup(ResourceMixin):
-    """A resource group.
-    """
+    """A resource group."""
 
-    def __init__(self, name='', path='', include=True, group=None):
+    def __init__(
+        self, name='', directory=None, path=None, include=True, group=None
+    ):
         """Create resource group.
 
         :param name: The resource group name.
+        :param directory: Directory containing the resource files.
         :param path: Optional URL path for HTML tag link creation. Takes
             precedence over group members paths.
         :param include: Flag or callback function returning a flag whether to
             include the resource group.
         :param group: Optional resource group instance.
         """
-        super(ResourceGroup, self).__init__(name=name, path=path, include=include)
-        if group:
-            group.add(self)
+        super(ResourceGroup, self).__init__(
+            name=name, directory=directory, path=path,
+            include=include, group=group
+        )
         self._members = []
 
     @property
     def members(self):
-        """List of group members."""
+        """List of group members.
+
+        Group members are either instances of ``Resource`` or ``ResourceGroup``.
+        """
         return self._members
+
+    @property
+    def scripts(self):
+        """List of all contained ``ScriptResource`` instances.
+
+        Resources from subsequent resource groups are included.
+        """
+        return self._filtered_resources(ScriptResource)
+
+    @property
+    def styles(self):
+        """List of all contained ``StyleResource`` instances.
+
+        Resources from subsequent resource groups are included.
+        """
+        return self._filtered_resources(StyleResource)
+
+    @property
+    def links(self):
+        """List of all contained ``LinkResource`` instances.
+
+        Resources from subsequent resource groups are included.
+        """
+        return self._filtered_resources(LinkResource)
 
     def add(self, member):
         """Add member to resource group.
+
+        If resource group has ``directory`` set but given member does not,
+        directory of member gets set.
 
         :param member: Either ``ResourceGroup`` or ``Resource`` instance.
         :raise ResourceError: Invalid member given.
@@ -489,7 +550,22 @@ class ResourceGroup(ResourceMixin):
                 'Resource group can only contain instances '
                 'of ``ResourceGroup`` or ``Resource``'
             )
+        member.parent = self
         self._members.append(member)
+
+    def _filtered_resources(self, type_, members=None):
+        if members is None:
+            members = self.members
+        resources = []
+        for member in members:
+            if isinstance(member, ResourceGroup):
+                resources += self._filtered_resources(
+                    type_,
+                    members=member.members
+                )
+            elif isinstance(member, type_):
+                resources.append(member)
+        return resources
 
     def __repr__(self):
         return '<{} name="{}">'.format(
@@ -499,8 +575,7 @@ class ResourceGroup(ResourceMixin):
 
 
 class ResourceConflictError(ResourceError):
-    """Multiple resources declared with the same name.
-    """
+    """Multiple resources declared with the same name."""
 
     def __init__(self, counter):
         conflicting = list()
@@ -512,8 +587,7 @@ class ResourceConflictError(ResourceError):
 
 
 class ResourceCircularDependencyError(ResourceError):
-    """Resources define circular dependencies.
-    """
+    """Resources define circular dependencies."""
 
     def __init__(self, resources):
         msg = 'Resources define circular dependencies: {}'.format(resources)
@@ -521,8 +595,7 @@ class ResourceCircularDependencyError(ResourceError):
 
 
 class ResourceMissingDependencyError(ResourceError):
-    """Resource depends on a missing resource.
-    """
+    """Resource depends on a missing resource."""
 
     def __init__(self, resource):
         msg = 'Resource defines missing dependency: {}'.format(resource)
@@ -530,8 +603,7 @@ class ResourceMissingDependencyError(ResourceError):
 
 
 class ResourceResolver(object):
-    """Resource resolver.
-    """
+    """Resource resolver."""
 
     def __init__(self, members):
         """Create resource resolver.
@@ -549,18 +621,6 @@ class ResourceResolver(object):
                     'of ``ResourceGroup`` or ``Resource``'
                 )
         self.members = members
-
-    def _resolve_paths(self, members=None, path=''):
-        if members is None:
-            members = self.members
-        for member in members:
-            if path:
-                member.resolved_path = path
-            if isinstance(member, ResourceGroup):
-                self._resolve_paths(
-                    members=member.members,
-                    path=member.resolved_path
-                )
 
     def _flat_resources(self, members=None):
         if members is None:
@@ -583,7 +643,6 @@ class ResourceResolver(object):
         :raise ResourceMissingDependencyError: Dependency resource not included
         :raise ResourceCircularDependencyError: Circular dependency defined.
         """
-        self._resolve_paths()
         resources = self._flat_resources()
         names = [res.name for res in resources]
         counter = Counter(names)
@@ -626,8 +685,7 @@ class ResourceResolver(object):
 
 
 class ResourceRenderer(object):
-    """Resource renderer.
-    """
+    """Resource renderer."""
 
     def __init__(self, resolver, base_url='https://tld.org'):
         """Create resource renderer.
@@ -639,16 +697,14 @@ class ResourceRenderer(object):
         self.base_url = base_url
 
     def render(self):
-        """Render resources.
-        """
+        """Render resources."""
         return u'\n'.join([
             res.render(self.base_url) for res in self.resolver.resolve()
         ])
 
 
 class GracefulResourceRenderer(ResourceRenderer):
-    """Resource renderer, which does not fail but logs an exception.
-    """
+    """Resource renderer, which does not fail but logs an exception."""
 
     def render(self):
         lines = []

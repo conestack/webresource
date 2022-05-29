@@ -5,6 +5,7 @@ Resource
 --------
 
 .. autoclass:: webresource::Resource
+    :show-inheritance:
     :members: __init__, file_name, file_path, resource_url, render
 
 
@@ -29,14 +30,15 @@ StyleResource
 
 .. autoclass:: webresource::StyleResource
     :show-inheritance:
-    :members: __init__
+    :members: __init__, render
 
 
 ResourceGroup
 -------------
 
 .. autoclass:: webresource::ResourceGroup
-    :members: __init__, members, add
+    :show-inheritance:
+    :members: __init__, members, scripts, styles, links, add
 
 
 ResourceResolver

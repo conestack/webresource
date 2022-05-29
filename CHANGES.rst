@@ -4,6 +4,34 @@ Changelog
 1.1 (unreleased)
 ----------------
 
+- Add ``scripts``, ``styles``, and ``links`` properties to ``ResourceGroup``.
+  [rnix]
+
+- Introduce ``parent`` attribute on ``ResourceMixin``. Gets set in
+  ``ResourceGroup.add`` method to provide hierarchy information.
+  [rnix]
+
+- Remove magic path resolving behavior for resources. Path no longer gets
+  overwritten in resolver. It gets now aquired from parent if not set on
+  resource or resource group.
+  [rnix]
+
+- ``LinkResource`` and ``StyleResource`` have common superclass ``LinkMixin``
+  now. ``StyleResource`` no longer derives from ``LinkResource``. This way,
+  link and style resources respective subclasses of it can be differentiated
+  with ``isinstance``.
+  [rnix]
+
+- Remove ``sizes`` keyword argument from ``StyleResource`` constructor.
+  [rnix]
+
+- ``ResourceGroup`` can define a directory for contained resources.
+  [rnix]
+
+- ``Resource.directory`` no longer gets set to package path by default but
+  remains ``None``.
+  [rnix]
+
 - Resources can define multiple dependencies.
   [rnix]
 
