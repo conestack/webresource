@@ -33,7 +33,7 @@ def temp_directory(fn):
 
 def np(path):
     """Normalize path."""
-    return path.replace("/", os.path.sep)
+    return path.replace('/', os.path.sep)
 
 
 class TestWebresource(unittest.TestCase):
@@ -70,11 +70,8 @@ class TestWebresource(unittest.TestCase):
         mixin.directory = '/dir'
         self.assertTrue(mixin.directory.endswith(os.path.join(os.path.sep, 'dir')))
 
-        mixin.directory = './dir'
-        self.assertTrue(mixin.directory.endswith(np('/webresource/dir')))
-
-        mixin.directory = './dir/../other'
-        self.assertTrue(mixin.directory.endswith(np('/webresource/other')))
+        mixin.directory = '/resources/dir/../other'
+        self.assertTrue(mixin.directory.endswith(np('/resources/other')))
 
         mixin.parent = ResourceMixin(name='other', directory='/other')
         mixin.directory = None
@@ -89,6 +86,8 @@ class TestWebresource(unittest.TestCase):
 
         mixin = ResourceMixin(name='name', path='path', include=include)
         self.assertFalse(mixin.include)
+
+        self.assertFalse(mixin.copy() is mixin)
 
     @temp_directory
     def test_Resource(self, tempdir):
@@ -385,6 +384,17 @@ class TestWebresource(unittest.TestCase):
             ['group-link', 'root-link']
         )
 
+        resource = wr.Resource(resource='res')
+        with self.assertRaises(wr.ResourceError):
+            resource.remove()
+
+        group = wr.ResourceGroup()
+        resource = wr.Resource(resource='res', group=group)
+        self.assertEqual(group.members, [resource])
+        resource.remove()
+        self.assertEqual(group.members, [])
+        self.assertEqual(resource.parent, None)
+
     def test_ResourceConflictError(self):
         counter = Counter(['a', 'b', 'b', 'c', 'c'])
         err = wr.ResourceConflictError(counter)
@@ -555,7 +565,7 @@ class TestWebresource(unittest.TestCase):
         # check if unique raises on render b/c file does not exist.
         wr.ScriptResource(
             name='js2',
-            directory='.',
+            directory='',
             resource='script2.js',
             compressed='script2.min.js',
             group=resources,
@@ -615,7 +625,7 @@ class TestWebresource(unittest.TestCase):
         # check if unique raises on is catched on render and turned into
         wr.ScriptResource(
             name='js2',
-            directory='.',
+            directory='',
             resource='script2.js',
             compressed='script2.min.js',
             group=resources,

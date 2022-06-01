@@ -1,7 +1,7 @@
 from collections import Counter
 import base64
+import copy
 import hashlib
-import inspect
 import logging
 import os
 import sys
@@ -27,6 +27,10 @@ class ResourceConfig(object):
 
 
 config = ResourceConfig()
+
+
+class ResourceError(ValueError):
+    """Resource related exception."""
 
 
 class ResourceMixin(object):
@@ -66,8 +70,6 @@ class ResourceMixin(object):
         if directory is None:
             self._directory = None
             return
-        elif directory.startswith('.'):
-            directory = os.path.join(self._module_directory(), directory)
         self._directory = os.path.abspath(directory)
 
     @property
@@ -80,13 +82,16 @@ class ResourceMixin(object):
     def include(self, include):
         self._include = include
 
-    def _module_directory(self):
-        module = inspect.getmodule(inspect.currentframe().f_back)
-        return os.path.dirname(os.path.abspath(module.__file__))
+    def remove(self):
+        """Remove resource or resource group from parent group."""
+        if not self.parent:
+            raise ResourceError('Object is no member of a resource group')
+        self.parent.members.remove(self)
+        self.parent = None
 
-
-class ResourceError(ValueError):
-    """Resource related exception."""
+    def copy(self):
+        """Return a deep copy of this object."""
+        return copy.deepcopy(self)
 
 
 class Resource(ResourceMixin):
@@ -538,9 +543,6 @@ class ResourceGroup(ResourceMixin):
 
     def add(self, member):
         """Add member to resource group.
-
-        If resource group has ``directory`` set but given member does not,
-        directory of member gets set.
 
         :param member: Either ``ResourceGroup`` or ``Resource`` instance.
         :raise ResourceError: Invalid member given.

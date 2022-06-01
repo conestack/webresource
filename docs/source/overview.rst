@@ -16,7 +16,7 @@ Declare a script:
 
     my_js = wr.ScriptResource(
         name='my_js',
-        directory='./bundle',
+        directory='/path/to/scripts',
         resource='my.js',
         compressed='my.min.js',
         path='js'
@@ -145,7 +145,7 @@ is taken unless a contained member overrides it.
 
 .. code-block:: python
 
-    scripts = wr.ResourceGroup(name='scripts', directory='./scripts')
+    scripts = wr.ResourceGroup(name='scripts', directory='/path/to/scripts')
 
 To control whether an entire group should be included, define an ``include``
 callback funtion or flag.

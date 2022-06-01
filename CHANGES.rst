@@ -4,6 +4,15 @@ Changelog
 1.1 (unreleased)
 ----------------
 
+- Remove relative directory resolving.
+  [rnix]
+
+- Add ``remove`` function to ``ResourceMixin``.
+  [rnix]
+
+- Add ``copy`` function to ``ResourceMixin``.
+  [rnix]
+
 - Add ``scripts``, ``styles``, and ``links`` properties to ``ResourceGroup``.
   [rnix]
 
