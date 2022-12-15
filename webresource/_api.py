@@ -37,7 +37,7 @@ class ResourceMixin(object):
     """Mixin for ``Resource`` and ``ResourceGroup``."""
 
     def __init__(
-            self, name='', directory=None, path=None, include=True, group=None, render_tag_name=None
+            self, name='', directory=None, path=None, include=True, group=None
     ):
         self.name = name
         self.directory = directory
@@ -46,7 +46,6 @@ class ResourceMixin(object):
         self.parent = None
         if group:
             group.add(self)
-        self.render_tag_name = render_tag_name
 
     @property
     def path(self):
@@ -108,7 +107,7 @@ class Resource(ResourceMixin):
         self, name='', depends=None, directory=None, path=None,
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
-        url=None, crossorigin=None, referrerpolicy=None, type_=None
+        url=None, crossorigin=None, referrerpolicy=None, type_=None, render_tag_name=None
     ):
         """Base class for resources.
 
@@ -154,6 +153,7 @@ class Resource(ResourceMixin):
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
+        self.render_tag_name = render_tag_name
 
     @property
     def file_name(self):
@@ -251,7 +251,7 @@ class ScriptResource(Resource):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        async_=None, defer=None, integrity=None, nomodule=None
+        async_=None, defer=None, integrity=None, nomodule=None, render_tag_name=None
     ):
         """Create script resource.
 
@@ -353,20 +353,23 @@ class LinkMixin(Resource):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        hreflang=None, media=None, rel=None, sizes=None, title=None
+        hreflang=None, media=None, rel=None, sizes=None, title=None,
+        render_tag_name=None
     ):
         super(LinkMixin, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
             unique=unique, unique_prefix=unique_prefix,
             hash_algorithm=hash_algorithm, group=group, url=url,
-            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_,
+            render_tag_name=render_tag_name
         )
         self.hreflang = hreflang
         self.media = media
         self.rel = rel
         self.sizes = sizes
         self.title = title
+        self.render_tag_name = render_tag_name
 
     def render(self, base_url):
         """Renders the resource HTML ``link`` tag.
@@ -397,7 +400,8 @@ class LinkResource(LinkMixin):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        hreflang=None, media=None, rel=None, sizes=None, title=None
+        hreflang=None, media=None, rel=None, sizes=None, title=None,
+        render_tag_name=None
     ):
         """Create link resource.
 
@@ -439,7 +443,7 @@ class LinkResource(LinkMixin):
             hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy,
             type_=type_, hreflang=hreflang, media=media, rel=rel, sizes=sizes,
-            title=title
+            title=title, render_tag_name=render_tag_name
         )
 
 
@@ -451,7 +455,7 @@ class StyleResource(LinkMixin):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
-        media='all', rel='stylesheet', title=None
+        media='all', rel='stylesheet', title=None, render_tag_name=None
     ):
         """Create link resource.
 
@@ -490,7 +494,7 @@ class StyleResource(LinkMixin):
             hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy,
             type_='text/css', hreflang=hreflang, media=media, rel=rel,
-            sizes=None, title=title
+            sizes=None, title=title, render_tag_name=render_tag_name
         )
 
 
