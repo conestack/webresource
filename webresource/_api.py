@@ -37,7 +37,7 @@ class ResourceMixin(object):
     """Mixin for ``Resource`` and ``ResourceGroup``."""
 
     def __init__(
-        self, name='', directory=None, path=None, include=True, group=None
+            self, name='', directory=None, path=None, include=True, group=None, render_tag_name=None
     ):
         self.name = name
         self.directory = directory
@@ -46,6 +46,7 @@ class ResourceMixin(object):
         self.parent = None
         if group:
             group.add(self)
+        self.render_tag_name = render_tag_name
 
     @property
     def path(self):
@@ -329,7 +330,7 @@ class ScriptResource(Resource):
 
         :param base_url: The base URL to create the URL resource.
         """
-        return self._render_tag('script', True, **{
+        render_attrs = {
             'src': self.resource_url(base_url),
             'crossorigin': self.crossorigin,
             'referrerpolicy': self.referrerpolicy,
@@ -338,7 +339,10 @@ class ScriptResource(Resource):
             'defer': self.defer,
             'integrity': self.integrity,
             'nomodule': self.nomodule
-        })
+        }
+        if self.render_tag_name:
+            render_attrs.update({self.render_tag_name: self.name})
+        return self._render_tag('script', True, **render_attrs)
 
 
 class LinkMixin(Resource):
@@ -369,7 +373,7 @@ class LinkMixin(Resource):
 
         :param base_url: The base URL to create the URL resource.
         """
-        return self._render_tag('link', False, **{
+        render_attrs = {
             'href': self.resource_url(base_url),
             'crossorigin': self.crossorigin,
             'referrerpolicy': self.referrerpolicy,
@@ -379,7 +383,10 @@ class LinkMixin(Resource):
             'rel': self.rel,
             'sizes': self.sizes,
             'title': self.title
-        })
+        }
+        if self.render_tag_name:
+            render_attrs.update({self.render_tag_name: self.name})
+        return self._render_tag('link', False, **render_attrs)
 
 
 class LinkResource(LinkMixin):
