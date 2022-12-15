@@ -7,12 +7,10 @@ import os
 import sys
 import uuid
 
-
 try:
     FileNotFoundError
 except NameError:  # pragma: nocover
     FileNotFoundError = EnvironmentError
-
 
 logger = logging.getLogger(__name__)
 is_py3 = sys.version_info[0] >= 3
@@ -107,7 +105,7 @@ class Resource(ResourceMixin):
         self, name='', depends=None, directory=None, path=None,
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
-        url=None, crossorigin=None, referrerpolicy=None, type_=None, render_tag_name=None
+        url=None, crossorigin=None, referrerpolicy=None, type_=None, **kw
     ):
         """Base class for resources.
 
@@ -153,7 +151,7 @@ class Resource(ResourceMixin):
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
-        self.render_tag_name = render_tag_name
+        self.others_attrs = kw
 
     @property
     def file_name(self):
@@ -251,7 +249,7 @@ class ScriptResource(Resource):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        async_=None, defer=None, integrity=None, nomodule=None, render_tag_name=None
+        async_=None, defer=None, integrity=None, nomodule=None, **kw
     ):
         """Create script resource.
 
@@ -294,12 +292,14 @@ class ScriptResource(Resource):
             resource=resource, compressed=compressed, include=include,
             unique=unique, unique_prefix=unique_prefix,
             hash_algorithm=hash_algorithm, group=group, url=url,
-            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_=type_, **kw
         )
         self.async_ = async_
         self.defer = defer
         self.integrity = integrity
         self.nomodule = nomodule
+        self.others_attrs = kw
 
     @property
     def integrity(self):
@@ -330,7 +330,7 @@ class ScriptResource(Resource):
 
         :param base_url: The base URL to create the URL resource.
         """
-        render_attrs = {
+        attrs = {
             'src': self.resource_url(base_url),
             'crossorigin': self.crossorigin,
             'referrerpolicy': self.referrerpolicy,
@@ -340,9 +340,8 @@ class ScriptResource(Resource):
             'integrity': self.integrity,
             'nomodule': self.nomodule
         }
-        if self.render_tag_name:
-            render_attrs.update({self.render_tag_name: self.name})
-        return self._render_tag('script', True, **render_attrs)
+        attrs.update(self.others_attrs)
+        return self._render_tag('script', True, **attrs)
 
 
 class LinkMixin(Resource):
@@ -353,30 +352,28 @@ class LinkMixin(Resource):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        hreflang=None, media=None, rel=None, sizes=None, title=None,
-        render_tag_name=None
+        hreflang=None, media=None, rel=None, sizes=None, title=None, **kw
     ):
         super(LinkMixin, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
             unique=unique, unique_prefix=unique_prefix,
             hash_algorithm=hash_algorithm, group=group, url=url,
-            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_,
-            render_tag_name=render_tag_name
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_, **kw
         )
         self.hreflang = hreflang
         self.media = media
         self.rel = rel
         self.sizes = sizes
         self.title = title
-        self.render_tag_name = render_tag_name
+        self.others_attrs = kw
 
     def render(self, base_url):
         """Renders the resource HTML ``link`` tag.
 
         :param base_url: The base URL to create the URL resource.
         """
-        render_attrs = {
+        attrs = {
             'href': self.resource_url(base_url),
             'crossorigin': self.crossorigin,
             'referrerpolicy': self.referrerpolicy,
@@ -387,9 +384,8 @@ class LinkMixin(Resource):
             'sizes': self.sizes,
             'title': self.title
         }
-        if self.render_tag_name:
-            render_attrs.update({self.render_tag_name: self.name})
-        return self._render_tag('link', False, **render_attrs)
+        attrs.update(self.others_attrs)
+        return self._render_tag('link', False, **attrs)
 
 
 class LinkResource(LinkMixin):
@@ -400,8 +396,7 @@ class LinkResource(LinkMixin):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        hreflang=None, media=None, rel=None, sizes=None, title=None,
-        render_tag_name=None
+        hreflang=None, media=None, rel=None, sizes=None, title=None, **kw
     ):
         """Create link resource.
 
@@ -443,7 +438,7 @@ class LinkResource(LinkMixin):
             hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy,
             type_=type_, hreflang=hreflang, media=media, rel=rel, sizes=sizes,
-            title=title, render_tag_name=render_tag_name
+            title=title, **kw
         )
 
 
@@ -455,7 +450,7 @@ class StyleResource(LinkMixin):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
-        media='all', rel='stylesheet', title=None, render_tag_name=None
+        media='all', rel='stylesheet', title=None, **kw
     ):
         """Create link resource.
 
@@ -494,7 +489,7 @@ class StyleResource(LinkMixin):
             hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy,
             type_='text/css', hreflang=hreflang, media=media, rel=rel,
-            sizes=None, title=title, render_tag_name=render_tag_name
+            sizes=None, title=title, **kw
         )
 
 
