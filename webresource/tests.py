@@ -223,6 +223,13 @@ class TestWebresource(unittest.TestCase):
             'https://tld.org/{}/res'.format(unique_key)
         )
 
+        resource = Resource(
+            name='res',
+            resource='res.ext',
+            custom_attr='value'
+        )
+        self.assertEqual(resource.additional_attrs, dict(custom_attr='value'))
+
     @temp_directory
     def test_ScriptResource(self, tempdir):
         script = wr.ScriptResource(name='js_res', resource='res.js')
@@ -275,6 +282,16 @@ class TestWebresource(unittest.TestCase):
         wr.config.development = True
         self.assertNotEqual(script.integrity, 'sha384-{}'.format(hash_))
 
+        script = wr.ScriptResource(
+            name='js_res',
+            resource='res.js',
+            custom='value'
+        )
+        self.assertEqual(
+            script.render('https://tld.org'),
+            '<script custom="value" src="https://tld.org/res.js"></script>'
+        )
+
     def test_LinkMixin(self):
         link = LinkMixin(name='link_res', resource='resource.md')
         self.assertEqual(link.hreflang, None)
@@ -295,6 +312,16 @@ class TestWebresource(unittest.TestCase):
             'media="screen" rel="alternate" type="text/markdown" />'
         ))
 
+        link = LinkMixin(
+            name='link_res',
+            resource='resource.md',
+            custom='value'
+        )
+        self.assertEqual(
+            link.render('https://tld.org'),
+            '<link custom="value" href="https://tld.org/resource.md" />'
+        )
+
     def test_LinkResource(self):
         link = wr.LinkResource(name='icon_res', resource='icon.png')
         self.assertIsInstance(link, LinkMixin)
@@ -310,6 +337,16 @@ class TestWebresource(unittest.TestCase):
             'sizes="16x16" type="image/png" />'
         ))
 
+        link = wr.LinkResource(
+            name='icon_res',
+            resource='icon.png',
+            custom='value'
+        )
+        self.assertEqual(
+            link.render('https://tld.org'),
+            '<link custom="value" href="https://tld.org/icon.png" />'
+        )
+
     def test_StyleResource(self):
         style = wr.StyleResource(name='css_res', resource='res.css')
         self.assertIsInstance(style, LinkMixin)
@@ -322,6 +359,16 @@ class TestWebresource(unittest.TestCase):
         )
         self.assertEqual(style.render('https://tld.org'), (
             '<link href="https://tld.org/res.css" media="all" '
+            'rel="stylesheet" type="text/css" />'
+        ))
+
+        style = wr.StyleResource(
+            name='css_res',
+            resource='res.css',
+            custom='value'
+        )
+        self.assertEqual(style.render('https://tld.org'), (
+            '<link custom="value" href="https://tld.org/res.css" media="all" '
             'rel="stylesheet" type="text/css" />'
         ))
 

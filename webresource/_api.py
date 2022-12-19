@@ -107,7 +107,7 @@ class Resource(ResourceMixin):
         self, name='', depends=None, directory=None, path=None,
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
-        url=None, crossorigin=None, referrerpolicy=None, type_=None
+        url=None, crossorigin=None, referrerpolicy=None, type_=None, **kwargs
     ):
         """Base class for resources.
 
@@ -131,6 +131,8 @@ class Resource(ResourceMixin):
         :param referrerpolicy: Specifies which referrer information to send when
             fetching the resource.
         :param type_: Specifies the media type of the resource.
+        :param **kwargs: Additional keyword arguments. Gets rendered as
+            additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
         if resource is None and url is None:
@@ -153,6 +155,7 @@ class Resource(ResourceMixin):
         self.crossorigin = crossorigin
         self.referrerpolicy = referrerpolicy
         self.type_ = type_
+        self.additional_attrs = kwargs
 
     @property
     def file_name(self):
@@ -250,7 +253,7 @@ class ScriptResource(Resource):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        async_=None, defer=None, integrity=None, nomodule=None
+        async_=None, defer=None, integrity=None, nomodule=None, **kwargs
     ):
         """Create script resource.
 
@@ -286,6 +289,8 @@ class ScriptResource(Resource):
             to be the already calculated resource hash and is taken as is.
         :param nomodule: Specifies that the script should not be executed in
             browsers supporting ES2015 modules.
+        :param **kwargs: Additional keyword arguments. Gets rendered as
+            additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
         super(ScriptResource, self).__init__(
@@ -293,7 +298,8 @@ class ScriptResource(Resource):
             resource=resource, compressed=compressed, include=include,
             unique=unique, unique_prefix=unique_prefix,
             hash_algorithm=hash_algorithm, group=group, url=url,
-            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_=type_, **kwargs
         )
         self.async_ = async_
         self.defer = defer
@@ -329,7 +335,7 @@ class ScriptResource(Resource):
 
         :param base_url: The base URL to create the URL resource.
         """
-        return self._render_tag('script', True, **{
+        attrs = {
             'src': self.resource_url(base_url),
             'crossorigin': self.crossorigin,
             'referrerpolicy': self.referrerpolicy,
@@ -338,7 +344,9 @@ class ScriptResource(Resource):
             'defer': self.defer,
             'integrity': self.integrity,
             'nomodule': self.nomodule
-        })
+        }
+        attrs.update(self.additional_attrs)
+        return self._render_tag('script', True, **attrs)
 
 
 class LinkMixin(Resource):
@@ -349,14 +357,15 @@ class LinkMixin(Resource):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        hreflang=None, media=None, rel=None, sizes=None, title=None
+        hreflang=None, media=None, rel=None, sizes=None, title=None, **kwargs
     ):
         super(LinkMixin, self).__init__(
             name=name, depends=depends, directory=directory, path=path,
             resource=resource, compressed=compressed, include=include,
             unique=unique, unique_prefix=unique_prefix,
             hash_algorithm=hash_algorithm, group=group, url=url,
-            crossorigin=crossorigin, referrerpolicy=referrerpolicy, type_=type_
+            crossorigin=crossorigin, referrerpolicy=referrerpolicy,
+            type_=type_, **kwargs
         )
         self.hreflang = hreflang
         self.media = media
@@ -369,7 +378,7 @@ class LinkMixin(Resource):
 
         :param base_url: The base URL to create the URL resource.
         """
-        return self._render_tag('link', False, **{
+        attrs = {
             'href': self.resource_url(base_url),
             'crossorigin': self.crossorigin,
             'referrerpolicy': self.referrerpolicy,
@@ -379,7 +388,9 @@ class LinkMixin(Resource):
             'rel': self.rel,
             'sizes': self.sizes,
             'title': self.title
-        })
+        }
+        attrs.update(self.additional_attrs)
+        return self._render_tag('link', False, **attrs)
 
 
 class LinkResource(LinkMixin):
@@ -390,7 +401,7 @@ class LinkResource(LinkMixin):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, type_=None,
-        hreflang=None, media=None, rel=None, sizes=None, title=None
+        hreflang=None, media=None, rel=None, sizes=None, title=None, **kwargs
     ):
         """Create link resource.
 
@@ -423,6 +434,8 @@ class LinkResource(LinkMixin):
         :param sizes: Specifies the size of the linked resource. Only for
             rel="icon".
         :param title: Defines a preferred or an alternate stylesheet.
+        :param **kwargs: Additional keyword arguments. Gets rendered as
+            additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
         super(LinkResource, self).__init__(
@@ -432,7 +445,7 @@ class LinkResource(LinkMixin):
             hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy,
             type_=type_, hreflang=hreflang, media=media, rel=rel, sizes=sizes,
-            title=title
+            title=title, **kwargs
         )
 
 
@@ -444,7 +457,7 @@ class StyleResource(LinkMixin):
         resource=None, compressed=None, include=True, unique=False,
         unique_prefix='++webresource++', hash_algorithm='sha384', group=None,
         url=None, crossorigin=None, referrerpolicy=None, hreflang=None,
-        media='all', rel='stylesheet', title=None
+        media='all', rel='stylesheet', title=None, **kwargs
     ):
         """Create link resource.
 
@@ -474,6 +487,8 @@ class StyleResource(LinkMixin):
         :param rel: Specifies the relationship between the current document and
             the linked document. Defaults to "stylesheet".
         :param title: Defines a preferred or an alternate stylesheet.
+        :param **kwargs: Additional keyword arguments. Gets rendered as
+            additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
         super(StyleResource, self).__init__(
@@ -483,7 +498,7 @@ class StyleResource(LinkMixin):
             hash_algorithm=hash_algorithm, group=group, url=url,
             crossorigin=crossorigin, referrerpolicy=referrerpolicy,
             type_='text/css', hreflang=hreflang, media=media, rel=rel,
-            sizes=None, title=title
+            sizes=None, title=title, **kwargs
         )
 
 

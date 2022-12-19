@@ -4,7 +4,9 @@ Changelog
 1.2 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Accept additional keyword arguments in resources. They get rendered as
+  additional attributes on resource tag.
+  [rnix, aormazabal]
 
 
 1.1 (2022-07-01)

@@ -89,6 +89,17 @@ If external resources should be declared, pass ``url`` argument. In this case
         ...
     )
 
+It is possible to render additional attributes on resource tags by passing
+additional keyword arguments to the constructor. This can be usefule when
+working with web compilers like Diazo.
+
+.. code-block:: python
+
+    custom_attr_js = wr.ScriptResource(
+        name='custom_attr_js',
+        **{'data-bundle': 'bundle-name'}
+    )
+
 This examples uses ``ScriptResource`` but the above described behavior applies
 to all provided Resource types.
 
