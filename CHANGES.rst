@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.2 (unreleased)
+1.2 (2022-12-21)
 ----------------
 
 - Accept additional keyword arguments in resources. They get rendered as
