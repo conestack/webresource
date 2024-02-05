@@ -1,7 +1,7 @@
 License
 =======
 
-Copyright (c) 2021-2022, Cone Contributors
+Copyright (c) 2021-2024, Cone Contributors
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

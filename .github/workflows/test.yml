@@ -1,8 +1,6 @@
-name: Test webresource
+name: Tests
 
-on:
-  push:
-  pull_request:
+on: [push]
 
 jobs:
   test:
@@ -18,17 +16,18 @@ jobs:
           - macos-latest
 
         python:
-          - "2.7"
           - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11"
+          - "3.12"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
@@ -43,4 +42,4 @@ jobs:
       - name: Run coverage
         run: |
           coverage run --source webresource -m webresource.tests
-          coverage report -m --fail-under=99
+          coverage report --fail-under=100
