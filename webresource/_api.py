@@ -237,7 +237,7 @@ class Resource(ResourceMixin):
 
     def __repr__(self):
         return (
-            '<{} name="{}", depends="{}">'
+            '{} name="{}", depends="{}"'
         ).format(
             self.__class__.__name__,
             self.name,
@@ -585,7 +585,7 @@ class ResourceGroup(ResourceMixin):
         return resources
 
     def __repr__(self):
-        return '<{} name="{}">'.format(
+        return '{} name="{}"'.format(
             self.__class__.__name__,
             self.name
         )

@@ -111,7 +111,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.type_, None)
         self.assertEqual(
             repr(resource),
-            '<Resource name="res", depends="None">'
+            'Resource name="res", depends="None"'
         )
 
         resource = Resource(name='res', resource='res.ext')
@@ -239,7 +239,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(script.nomodule, None)
         self.assertEqual(
             repr(script),
-            '<ScriptResource name="js_res", depends="None">'
+            'ScriptResource name="js_res", depends="None"'
         )
         self.assertEqual(
             script.render('https://tld.org'),
@@ -301,7 +301,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(link.title, None)
         self.assertEqual(
             repr(link),
-            '<LinkMixin name="link_res", depends="None">'
+            'LinkMixin name="link_res", depends="None"'
         )
         link.hreflang = 'en'
         link.media = 'screen'
@@ -327,7 +327,7 @@ class TestWebresource(unittest.TestCase):
         self.assertIsInstance(link, LinkMixin)
         self.assertEqual(
             repr(link),
-            '<LinkResource name="icon_res", depends="None">'
+            'LinkResource name="icon_res", depends="None"'
         )
         link.rel = 'icon'
         link.type_ = 'image/png'
@@ -355,7 +355,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(style.rel, 'stylesheet')
         self.assertEqual(
             repr(style),
-            '<StyleResource name="css_res", depends="None">'
+            'StyleResource name="css_res", depends="None"'
         )
         self.assertEqual(style.render('https://tld.org'), (
             '<link href="https://tld.org/res.css" media="all" '
@@ -377,7 +377,7 @@ class TestWebresource(unittest.TestCase):
         self.assertIsInstance(group, ResourceMixin)
         self.assertEqual(group.name, 'groupname')
         self.assertEqual(group.members, [])
-        self.assertEqual(repr(group), '<ResourceGroup name="groupname">')
+        self.assertEqual(repr(group), 'ResourceGroup name="groupname"')
 
         res = wr.ScriptResource(name='name', resource='name.js')
         group.add(res)
@@ -452,7 +452,7 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceCircularDependencyError([resource])
         self.assertEqual(str(err), (
             'Resources define circular dependencies: '
-            '[<Resource name="res1", depends="[\'res2\']">]'
+            '[Resource name="res1", depends="[\'res2\']"]'
         ))
 
     def test_ResourceMissingDependencyError(self):
@@ -460,7 +460,7 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceMissingDependencyError(resource)
         self.assertEqual(str(err), (
             'Resource defines missing dependency: '
-            '<Resource name="res", depends="[\'missing\']">'
+            'Resource name="res", depends="[\'missing\']"'
         ))
 
     def test_ResourceResolver__flat_resources(self):

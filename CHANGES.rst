@@ -4,7 +4,9 @@ Changelog
 1.3 (unreleased)
 ----------------
 
-- Nothing changed yet.
+- Do not wrap resource ``__repr__`` output in ``<>`` to render tracebacks
+  properly in browser.
+  [lenadax]
 
 
 1.2 (2022-12-21)
