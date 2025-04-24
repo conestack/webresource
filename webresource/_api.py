@@ -723,7 +723,7 @@ class ResourceRenderer(object):
 class GracefulResourceRenderer(ResourceRenderer):
     """Resource renderer, which does not fail but logs an exception."""
 
-    def render(self):
+    def render(self, error_callback=None):
         lines = []
         for resource in self.resolver.resolve():
             error_msg = None
@@ -752,4 +752,6 @@ class GracefulResourceRenderer(ResourceRenderer):
             finally:
                 lines.append(u'<!-- {} - details in logs -->'.format(error_msg))
                 logger.exception(error_msg)
+                if error_callback:
+                    error_callback(error_msg)
         return u'\n'.join(lines)
