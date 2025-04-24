@@ -726,10 +726,30 @@ class GracefulResourceRenderer(ResourceRenderer):
     def render(self):
         lines = []
         for resource in self.resolver.resolve():
+            error_msg = None
             try:
                 lines.append(resource.render(self.base_url))
-            except (ResourceError, FileNotFoundError):
-                msg = u'Failure to render resource "{}"'.format(resource.name)
-                lines.append(u'<!-- {} - details in logs -->'.format(msg))
-                logger.exception(msg)
+            except FileNotFoundError:
+                error_msg = u'File not found for resource "{}"'.format(
+                    resource.name
+                )
+            except ResourceMissingDependencyError:
+                error_msg = u'Resource "{}" has missing dependencies'.format(
+                    resource.name
+                )
+            except ResourceCircularDependencyError:
+                error_msg = u'Resource "{}" has circular dependencies'.format(
+                    resource.name
+                )
+            except ResourceConflictError:
+                error_msg = u'Resource "{}" has conflicting names'.format(
+                    resource.name
+                )
+            except ResourceError:
+                error_msg = u'Failure to render resource "{}"'.format(
+                    resource.name
+                )
+            finally:
+                lines.append(u'<!-- {} - details in logs -->'.format(error_msg))
+                logger.exception(error_msg)
         return u'\n'.join(lines)
