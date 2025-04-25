@@ -652,7 +652,7 @@ class ResourceResolver(object):
                 resources.append(member)
         return resources
 
-    def resolve(self):
+    def resolve(self, graceful=False, error_callback=None):
         """Return all resources from members as flat list ordered by
         dependencies.
 
@@ -664,7 +664,13 @@ class ResourceResolver(object):
         names = [res.name for res in resources]
         counter = Counter(names)
         if len(resources) != len(counter):
-            raise ResourceConflictError(counter)
+            if graceful:
+                error_message = f'Resource list contains conflicting names: {counter}'
+                logger.warning(error_message)
+                if error_callback:
+                    error_callback(error_message)
+            else:
+                raise ResourceConflictError(counter)
         ret = []
         handled = {}
         for resource in resources[:]:
@@ -675,7 +681,13 @@ class ResourceResolver(object):
             else:
                 for dependency_name in resource.depends:
                     if dependency_name not in names:
-                        raise ResourceMissingDependencyError(resource)
+                        if graceful:
+                            error_message = f'Resource {resource} has missingdependencies'
+                            logger.warning(error_message)
+                            if error_callback:
+                                error_callback(error_message)
+                        else:
+                            raise ResourceMissingDependencyError(resource)
         count = len(resources)
         while count > 0:
             count -= 1
@@ -697,7 +709,13 @@ class ResourceResolver(object):
                 resources.remove(resource)
                 break
         if resources:
-            raise ResourceCircularDependencyError(resources)
+            if graceful:
+                error_message = f'Resource list contains circular dependencies: {resources}'
+                logger.warning(error_message)
+                if error_callback:
+                    error_callback(error_message)
+            else:
+                raise ResourceCircularDependencyError(resources)
         return ret
 
 
@@ -725,33 +743,22 @@ class GracefulResourceRenderer(ResourceRenderer):
 
     def render(self, error_callback=None):
         lines = []
-        for resource in self.resolver.resolve():
-            error_msg = None
+        for resource in self.resolver.resolve(graceful=True, error_callback=error_callback):
+            error_message = None
             try:
                 lines.append(resource.render(self.base_url))
             except FileNotFoundError:
-                error_msg = u'File not found for resource "{}"'.format(
-                    resource.name
-                )
-            except ResourceMissingDependencyError:
-                error_msg = u'Resource "{}" has missing dependencies'.format(
-                    resource.name
-                )
-            except ResourceCircularDependencyError:
-                error_msg = u'Resource "{}" has circular dependencies'.format(
-                    resource.name
-                )
-            except ResourceConflictError:
-                error_msg = u'Resource "{}" has conflicting names'.format(
+                error_message = u'File not found for resource "{}"'.format(
                     resource.name
                 )
             except ResourceError:
-                error_msg = u'Failure to render resource "{}"'.format(
+                error_message = u'Failure to render resource "{}"'.format(
                     resource.name
                 )
             finally:
-                lines.append(u'<!-- {} - details in logs -->'.format(error_msg))
-                logger.exception(error_msg)
-                if error_callback:
-                    error_callback(error_msg)
+                if error_message:
+                    lines.append(u'<!-- {} - details in logs -->'.format(error_message))
+                    logger.exception(error_message)
+                    if error_callback:
+                        error_callback(error_message)
         return u'\n'.join(lines)
