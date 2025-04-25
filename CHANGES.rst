@@ -4,6 +4,15 @@ Changelog
 1.3 (unreleased)
 ----------------
 
+- Allow to pass an error_callback for the GracefulResourceRenderer.
+  This allows to run some code in an error case, e.g. to add a user-visible
+  status message.
+  [thet]
+
+- Improve the error messages for the GracefulResourceRenderer to give an admin
+  better hints on what was going wrong.
+  [thet]
+
 - Do not wrap resource ``__repr__`` output in ``<>`` to render tracebacks
   properly in browser.
   [lenadax]
@@ -68,7 +77,7 @@ Changelog
   Modernize setup.[py|cfg].
   [jensens]
 
-- Added ``GracefulResourceRenderer``. 
+- Added ``GracefulResourceRenderer``.
   Fixes #1.
   [jensens]
 
