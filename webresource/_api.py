@@ -85,13 +85,35 @@ class ResourceMixin(object):
     def remove(self):
         """Remove resource or resource group from parent group."""
         if not self.parent:
-            raise ResourceError('Object is no member of a resource group')
+            raise ResourceError(
+                'Cannot remove resource or resource group {}.'
+                ' It is no member of a resource group.'.format(self)
+            )
         self.parent.members.remove(self)
         self.parent = None
 
     def copy(self):
         """Return a deep copy of this object."""
         return copy.deepcopy(self)
+
+    def __repr__(self):
+        """Return a string representation of the resource or resource group."""
+
+        reprs = []
+        if getattr(self, "name", None):
+            reprs.append('name="{}"'.format(self.name))
+        elif getattr(self, "path", None):
+            reprs.append('path="{}"'.format(self.path))
+        elif getattr(self, "url", None):
+            reprs.append('url="{}"'.format(self.url))
+
+        if getattr(self, "depends", None):
+            reprs.append('depends="{}"'.format(self.depends))
+
+        return '<{} {}>'.format(
+            self.__class__.__name__,
+            ", ".join(reprs) if reprs else "unnamed"
+        )
 
 
 class Resource(ResourceMixin):
@@ -135,12 +157,16 @@ class Resource(ResourceMixin):
             additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
-        if resource is None and url is None:
-            raise ResourceError('Either resource or url must be given')
         super(Resource, self).__init__(
             name=name, directory=directory, path=path,
             include=include, group=group
         )
+        if resource is None and url is None:
+            raise ResourceError(
+                'Either resource or url must be given for resource {}'.format(
+                    self
+                )
+            )
         self.depends = (
             (depends if isinstance(depends, (list, tuple)) else [depends])
             if depends else None
@@ -169,7 +195,9 @@ class Resource(ResourceMixin):
         """Absolute resource file path depending on operation mode."""
         directory = self.directory
         if not directory:
-            raise ResourceError('No directory set on resource.')
+            raise ResourceError(
+                'No directory set on resource {}'.format(self)
+            )
         return os.path.join(directory, self.file_name)
 
     @property
@@ -234,15 +262,6 @@ class Resource(ResourceMixin):
         if not closing_tag:
             return u'<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
         return u'<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
-
-    def __repr__(self):
-        return (
-            '{} name="{}", depends="{}"'
-        ).format(
-            self.__class__.__name__,
-            self.name,
-            self.depends
-        )
 
 
 class ScriptResource(Resource):
@@ -323,8 +342,10 @@ class ScriptResource(Resource):
     def integrity(self, integrity):
         if integrity is True:
             if self.url is not None:
-                msg = 'Cannot calculate integrity hash from external resource'
-                raise ResourceError(msg)
+                raise ResourceError(
+                    'Cannot calculate integrity hash from external resource '
+                    '{}'.format(self)
+                )
             self._integrity_hash = None
         else:
             self._integrity_hash = integrity
@@ -564,8 +585,8 @@ class ResourceGroup(ResourceMixin):
         """
         if not isinstance(member, (ResourceGroup, Resource)):
             raise ResourceError(
-                'Resource group can only contain instances '
-                'of ``ResourceGroup`` or ``Resource``'
+                'Resource group {} can only contain instances '
+                'of ``ResourceGroup`` or ``Resource``'.format(self)
             )
         member.parent = self
         self._members.append(member)
@@ -583,12 +604,6 @@ class ResourceGroup(ResourceMixin):
             elif isinstance(member, type_):
                 resources.append(member)
         return resources
-
-    def __repr__(self):
-        return '{} name="{}"'.format(
-            self.__class__.__name__,
-            self.name
-        )
 
 
 class ResourceConflictError(ResourceError):
@@ -634,7 +649,7 @@ class ResourceResolver(object):
         for member in members:
             if not isinstance(member, (Resource, ResourceGroup)):
                 raise ResourceError(
-                    'members can only contain instances '
+                    'ResourceResolver members can only contain instances '
                     'of ``ResourceGroup`` or ``Resource``'
                 )
         self.members = members
@@ -726,10 +741,19 @@ class GracefulResourceRenderer(ResourceRenderer):
     def render(self):
         lines = []
         for resource in self.resolver.resolve():
+            error_message = None
             try:
                 lines.append(resource.render(self.base_url))
-            except (ResourceError, FileNotFoundError):
-                msg = u'Failure to render resource "{}"'.format(resource.name)
-                lines.append(u'<!-- {} - details in logs -->'.format(msg))
-                logger.exception(msg)
+            except FileNotFoundError:
+                error_message = u'File not found for resource {}'.format(
+                    resource
+                )
+            except ResourceError as e:
+                error_message = str(e)
+            finally:
+                if error_message:
+                    lines.append(u'<!-- {} - details in logs -->'.format(
+                        error_message
+                    ))
+                    logger.exception(error_message)
         return u'\n'.join(lines)

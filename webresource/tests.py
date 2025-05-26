@@ -111,7 +111,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(resource.type_, None)
         self.assertEqual(
             repr(resource),
-            'Resource name="res", depends="None"'
+            '<Resource name="res">'
         )
 
         resource = Resource(name='res', resource='res.ext')
@@ -239,7 +239,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(script.nomodule, None)
         self.assertEqual(
             repr(script),
-            'ScriptResource name="js_res", depends="None"'
+            """<ScriptResource name="js_res">"""
         )
         self.assertEqual(
             script.render('https://tld.org'),
@@ -301,7 +301,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(link.title, None)
         self.assertEqual(
             repr(link),
-            'LinkMixin name="link_res", depends="None"'
+            '<LinkMixin name="link_res">'
         )
         link.hreflang = 'en'
         link.media = 'screen'
@@ -327,7 +327,7 @@ class TestWebresource(unittest.TestCase):
         self.assertIsInstance(link, LinkMixin)
         self.assertEqual(
             repr(link),
-            'LinkResource name="icon_res", depends="None"'
+            '<LinkResource name="icon_res">'
         )
         link.rel = 'icon'
         link.type_ = 'image/png'
@@ -355,7 +355,7 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(style.rel, 'stylesheet')
         self.assertEqual(
             repr(style),
-            'StyleResource name="css_res", depends="None"'
+            """<StyleResource name="css_res">"""
         )
         self.assertEqual(style.render('https://tld.org'), (
             '<link href="https://tld.org/res.css" media="all" '
@@ -377,7 +377,7 @@ class TestWebresource(unittest.TestCase):
         self.assertIsInstance(group, ResourceMixin)
         self.assertEqual(group.name, 'groupname')
         self.assertEqual(group.members, [])
-        self.assertEqual(repr(group), 'ResourceGroup name="groupname"')
+        self.assertEqual(repr(group), '<ResourceGroup name="groupname">')
 
         res = wr.ScriptResource(name='name', resource='name.js')
         group.add(res)
@@ -442,6 +442,115 @@ class TestWebresource(unittest.TestCase):
         self.assertEqual(group.members, [])
         self.assertEqual(resource.parent, None)
 
+    def test_resource_repr(self):
+        res = ResourceMixin(name='res')
+        self.assertEqual(
+            repr(res),
+            '<ResourceMixin name="res">'
+        )
+
+        # Fallback, if nothing is set.
+        res = ResourceMixin()
+        self.assertEqual(
+            repr(res),
+            '<ResourceMixin unnamed>'
+        )
+
+        res = ResourceMixin(path="/a/b/c")
+        self.assertEqual(
+            repr(res),
+            '<ResourceMixin path="/a/b/c">'
+        )
+
+        res = Resource(url="https://example.com")
+        self.assertEqual(
+            repr(res),
+            '<Resource url="https://example.com">'
+        )
+
+        # Name takes precendence over all other attributes.
+        res = Resource(name='res', path="/a/b/c", url="https://example.com")
+        self.assertEqual(
+            repr(res),
+            '<Resource name="res">'
+        )
+
+        # Path takes precendence over url.
+        res = Resource(path="/a/b/c", url="https://example.com")
+        self.assertEqual(
+            repr(res),
+            '<Resource path="/a/b/c">'
+        )
+
+        # Example with depends
+        res = Resource(
+            name='res',
+            url="https://example.com",
+            depends="other.ext",
+        )
+        self.assertEqual(
+            repr(res),
+            """<Resource name="res", depends="['other.ext']">"""
+        )
+
+    def test_ResourceError(self):
+        with self.assertRaises(wr.ResourceError) as cm:
+            Resource()
+
+        self.assertEqual(
+            str(cm.exception),
+            'Either resource or url must be given for resource '
+            '<Resource unnamed>'
+        )
+
+        with self.assertRaises(wr.ResourceError) as cm:
+            res = ResourceMixin(name="res")
+            res.remove()
+
+        self.assertEqual(
+            str(cm.exception),
+            'Cannot remove resource or resource group '
+            '<ResourceMixin name="res">. It is no member of a resource group.'
+        )
+
+        with self.assertRaises(wr.ResourceError) as cm:
+            res = Resource(url='https://example.com')
+            res.file_path
+
+        self.assertEqual(
+            str(cm.exception),
+            'No directory set on resource <Resource url="https://example.com">'
+        )
+
+        with self.assertRaises(wr.ResourceError) as cm:
+            res = wr.ScriptResource(url='https://example.com')
+            res.integrity = True
+
+        self.assertEqual(
+            str(cm.exception),
+            'Cannot calculate integrity hash from external resource '
+            '<ScriptResource url="https://example.com">'
+        )
+
+        with self.assertRaises(wr.ResourceError) as cm:
+            res = wr.ResourceGroup(name='okay')
+            res.add(object())
+
+        self.assertEqual(
+            str(cm.exception),
+            'Resource group <ResourceGroup name="okay"> can only contain '
+            'instances of ``ResourceGroup`` or ``Resource``'
+        )
+
+        with self.assertRaises(wr.ResourceError) as cm:
+            res = wr.ResourceResolver(None)
+
+        self.assertEqual(
+            str(cm.exception),
+            'ResourceResolver members can only contain instances of '
+            '``ResourceGroup`` or ``Resource``'
+        )
+
     def test_ResourceConflictError(self):
         counter = Counter(['a', 'b', 'b', 'c', 'c'])
         err = wr.ResourceConflictError(counter)
@@ -452,7 +561,7 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceCircularDependencyError([resource])
         self.assertEqual(str(err), (
             'Resources define circular dependencies: '
-            '[Resource name="res1", depends="[\'res2\']"]'
+            """[<Resource name="res1", depends="['res2']">]"""
         ))
 
     def test_ResourceMissingDependencyError(self):
@@ -460,7 +569,7 @@ class TestWebresource(unittest.TestCase):
         err = wr.ResourceMissingDependencyError(resource)
         self.assertEqual(str(err), (
             'Resource defines missing dependency: '
-            'Resource name="res", depends="[\'missing\']"'
+            """<Resource name="res", depends="['missing']">"""
         ))
 
     def test_ResourceResolver__flat_resources(self):
@@ -687,7 +796,7 @@ class TestWebresource(unittest.TestCase):
                 # check if its ours
                 self.assertEqual(
                     captured.records[0].getMessage().split('\n')[0],
-                    'Failure to render resource "js2"',
+                    """File not found for resource <ScriptResource name="js2", depends="['js']">"""
                 )
         else:  # pragma: nocover
             rendered = renderer.render()
@@ -699,7 +808,7 @@ class TestWebresource(unittest.TestCase):
             '<link href="https://ext.org/styles.css" media="all" '
             'rel="stylesheet" type="text/css" />\n'
             '<script src="https://tld.org/res/script.js"></script>\n'
-            '<!-- Failure to render resource "js2" - details in logs -->'
+            """<!-- File not found for resource <ScriptResource name="js2", depends="['js']"> - details in logs -->"""
         ))
 
 

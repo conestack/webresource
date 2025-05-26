@@ -4,6 +4,9 @@ Changelog
 1.3 (unreleased)
 ----------------
 
+- Improve error messages by including more detailed information.
+  [thet]
+
 - Do not wrap resource ``__repr__`` output in ``<>`` to render tracebacks
   properly in browser.
   [lenadax]
@@ -68,7 +71,7 @@ Changelog
   Modernize setup.[py|cfg].
   [jensens]
 
-- Added ``GracefulResourceRenderer``. 
+- Added ``GracefulResourceRenderer``.
   Fixes #1.
   [jensens]
 
