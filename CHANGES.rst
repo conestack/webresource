@@ -4,6 +4,9 @@ Changelog
 1.3 (unreleased)
 ----------------
 
+- Also handle resource resolver errors gracefully in the GracefulResourceRenderer.
+  [thet]
+
 - Improve error messages by including more detailed information.
   [thet]
 

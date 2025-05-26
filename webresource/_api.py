@@ -740,7 +740,19 @@ class GracefulResourceRenderer(ResourceRenderer):
 
     def render(self):
         lines = []
-        for resource in self.resolver.resolve():
+        resources = []
+
+        try:
+            resources = self.resolver.resolve()
+        except (
+            ResourceConflictError,
+            ResourceCircularDependencyError,
+            ResourceMissingDependencyError,
+        ) as e:
+            error_message = str(e)
+            logger.exception(error_message)
+
+        for resource in resources:
             error_message = None
             try:
                 lines.append(resource.render(self.base_url))

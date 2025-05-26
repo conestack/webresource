@@ -811,6 +811,35 @@ class TestWebresource(unittest.TestCase):
             """<!-- File not found for resource <ScriptResource name="js2", depends="['js']"> - details in logs -->"""
         ))
 
+    def test_GreacefulResourceRenderer_resolver_errors(self):
+        # Get log level to restore it later
+        import logging
+        original_log_level = logging.getLogger().getEffectiveLevel()
+
+        # Create a resource with a circular dependency
+        resource = Resource(name='res1', resource='res1.ext', depends='res1')
+
+        resolver = wr.ResourceResolver([resource])
+        renderer = wr.GracefulResourceRenderer(resolver)
+
+        rendered = None
+        try:
+            # Supress error traceback in logs
+            logging.disable(logging.CRITICAL)
+            rendered = renderer.render()
+            # Restore logging level
+            logging.disable(original_log_level)
+        except wr.ResourceCircularDependencyError:  # pragma: nocover
+            self.fail(
+                'GracefulResourceRenderer should not raise '
+                'ResourceCircularDependencyError'
+            )
+
+        # No error is raised, but rendered is also empty.
+        # However, a server rendered HTML based UI form should still be
+        # interactible.
+        self.assertEqual(rendered, "")
+
 
 if __name__ == '__main__':
     unittest.main()
