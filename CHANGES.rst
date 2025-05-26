@@ -4,6 +4,11 @@ Changelog
 1.3 (unreleased)
 ----------------
 
+- Allow to pass an error_callback for the GracefulResourceRenderer.
+  This allows to run some code in an error case, e.g. to add a user-visible
+  status message.
+  [thet]
+
 - Also handle resource resolver errors gracefully in the GracefulResourceRenderer.
   [thet]
 

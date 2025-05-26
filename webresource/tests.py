@@ -7,17 +7,21 @@ from webresource._api import (
     ResourceConfig,
     ResourceMixin
 )
+import logging
 import os
 import shutil
 import tempfile
 import unittest
 import webresource as wr
 
-
 try:
     FileNotFoundError
 except NameError:  # pragma: nocover
     FileNotFoundError = EnvironmentError
+
+
+# Get log level to restore it later
+original_log_level = logging.getLogger().getEffectiveLevel()
 
 
 def temp_directory(fn):
@@ -812,10 +816,6 @@ class TestWebresource(unittest.TestCase):
         ))
 
     def test_GreacefulResourceRenderer_resolver_errors(self):
-        # Get log level to restore it later
-        import logging
-        original_log_level = logging.getLogger().getEffectiveLevel()
-
         # Create a resource with a circular dependency
         resource = Resource(name='res1', resource='res1.ext', depends='res1')
 
@@ -839,6 +839,61 @@ class TestWebresource(unittest.TestCase):
         # However, a server rendered HTML based UI form should still be
         # interactible.
         self.assertEqual(rendered, "")
+
+    def test_GreacefulResourceRenderer_callback_resolver(self):
+        # Callback which should be called on error
+        error_message = []
+
+        def callback(message):
+            error_message.append(message)
+
+        # Create a resource with a circular dependency
+        resource = Resource(name='res1', resource='res1.ext', depends='res1')
+
+        resolver = wr.ResourceResolver([resource])
+        renderer = wr.GracefulResourceRenderer(resolver)
+
+        # Supress error traceback in logs
+        logging.disable(logging.CRITICAL)
+        renderer.render(error_callback=callback)
+        # Restore logging level
+        logging.disable(original_log_level)
+
+        self.assertEqual(len(error_message), 1)
+        self.assertEqual(
+            error_message[-1],
+            "Resources define circular dependencies: "
+            """[<Resource name="res1", depends="['res1']">]"""
+        )
+
+    def test_GreacefulResourceRenderer_callback_render(self):
+        # Callback which should be called on error
+        error_message = []
+
+        def callback(message):
+            error_message.append(message)
+
+        # Create a resource with a circular dependency
+        resource = wr.ScriptResource(
+            name='res1',
+            resource='res1.ext',
+            unique=True
+        )
+
+        resolver = wr.ResourceResolver([resource])
+        renderer = wr.GracefulResourceRenderer(resolver)
+
+        # Supress error traceback in logs
+        logging.disable(logging.CRITICAL)
+        renderer.render(error_callback=callback)
+        # Restore logging level
+        logging.disable(original_log_level)
+
+        self.assertEqual(len(error_message), 1)
+        self.assertEqual(
+            error_message[-1],
+            """No directory set on resource <ScriptResource name="res1">"""
+        )
 
 
 if __name__ == '__main__':
