@@ -4,6 +4,9 @@ Changelog
 1.3 (unreleased)
 ----------------
 
+- Drop Python 3.7 support, add Python 3.13 support.
+  [thet]
+
 - Do not wrap resource ``__repr__`` output in ``<>`` to render tracebacks
   properly in browser.
   [lenadax]
