@@ -41,8 +41,12 @@ ChangeLog = "https://github.com/conestack/webresource/blob/master/CHANGES.rst"
 "Issue Tracker" = "https://github.com/conestack/webresource/issues"
 "Source Code" = "https://github.com/conestack/webresource"
 
+[tool.hatch.build.targets.sdist]
+exclude = ["/docs"]
+include = ["docs/source/overview.rst"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["webresource"]
+
 [tool.zest-releaser]
 create-wheel = true
