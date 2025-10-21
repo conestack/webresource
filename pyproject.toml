@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "webresource"
@@ -39,10 +39,6 @@ Documentation = "https://webresource.readthedocs.io/"
 ChangeLog = "https://github.com/conestack/webresource/blob/master/CHANGES.rst"
 "Issue Tracker" = "https://github.com/conestack/webresource/issues"
 "Source Code" = "https://github.com/conestack/webresource"
-
-[tool.setuptools]
-packages = ["webresource"]
-include-package-data = true
 
 [tool.zest-releaser]
 create-wheel = true
