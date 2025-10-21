@@ -4,6 +4,9 @@ Changelog
 1.3 (unreleased)
 ----------------
 
+- Official support from Python 3.9 to 3.14.
+  [rnix]
+
 - Do not wrap resource ``__repr__`` output in ``<>`` to render tracebacks
   properly in browser.
   [lenadax]
