@@ -1,8 +1,0 @@
-exclude *.ini
-exclude *.txt
-include *.rst
-recursive-include src *
-recursive-exclude src *.pyc *.pyo
-recursive-exclude docs *
-include docs/source/overview.rst
-prune scripts
