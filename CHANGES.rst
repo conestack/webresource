@@ -1,8 +1,8 @@
 Changelog
 =========
 
-1.3 (unreleased)
-----------------
+1.3.0 (unreleased)
+------------------
 
 - Official support from Python 3.9 to 3.14.
   [rnix]
