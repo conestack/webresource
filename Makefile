@@ -178,7 +178,7 @@ COVERAGE_COMMAND?=\
 
 # Source folder for code analysis.
 # Default: src
-MYPY_SRC?=webresource tests
+MYPY_SRC?=webresource
 
 # Mypy Python requirements to be installed (via pip).
 # Default: types-setuptools

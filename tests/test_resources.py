@@ -35,6 +35,10 @@ class TestResources(unittest.TestCase):
         self.assertEqual(resource.type_, None)
         self.assertEqual(repr(resource), 'Resource name="res", depends="None"')
 
+        resource = Resource(name='res', url='http://tld.net/resource')
+        with self.assertRaises(wr.ResourceError):
+            resource.file_name
+
         resource = Resource(name='res', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
         with self.assertRaises(wr.ResourceError):

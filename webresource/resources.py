@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
+from typing import TYPE_CHECKING
 from webresource.base import ResourceMixin
 from webresource.config import config
 from webresource.config import namespace_uuid
@@ -9,32 +14,49 @@ import os
 import uuid
 
 
+if TYPE_CHECKING:
+    from webresource.groups import ResourceGroup
+
+
 class Resource(ResourceMixin):
     """A web resource."""
 
-    _hash_algorithms = dict(
+    _hash_algorithms: dict[str, Callable[[bytes], Any]] = dict(
         sha256=hashlib.sha256, sha384=hashlib.sha384, sha512=hashlib.sha512
     )
 
+    depends: list[str] | None
+    resource: str | None
+    compressed: str | None
+    unique: bool
+    unique_prefix: str
+    hash_algorithm: str
+    _file_hash: str | None
+    url: str | None
+    crossorigin: str | None
+    referrerpolicy: str | None
+    type_: str | None
+    additional_attrs: dict[str, Any]
+
     def __init__(
         self,
-        name='',
-        depends=None,
-        directory=None,
-        path=None,
-        resource=None,
-        compressed=None,
-        include=True,
-        unique=False,
-        unique_prefix='++webresource++',
-        hash_algorithm='sha384',
-        group=None,
-        url=None,
-        crossorigin=None,
-        referrerpolicy=None,
-        type_=None,
-        **kwargs,
-    ):
+        name: str = '',
+        depends: str | list[str] | tuple[str, ...] | None = None,
+        directory: str | None = None,
+        path: str | None = None,
+        resource: str | None = None,
+        compressed: str | None = None,
+        include: bool | Callable[[], bool] = True,
+        unique: bool = False,
+        unique_prefix: str = '++webresource++',
+        hash_algorithm: str = 'sha384',
+        group: ResourceGroup | None = None,
+        url: str | None = None,
+        crossorigin: str | None = None,
+        referrerpolicy: str | None = None,
+        type_: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Base class for resources.
 
         :param name: The resource unique name.
@@ -66,11 +88,14 @@ class Resource(ResourceMixin):
         super(Resource, self).__init__(
             name=name, directory=directory, path=path, include=include, group=group
         )
-        self.depends = (
-            (depends if isinstance(depends, (list, tuple)) else [depends])
-            if depends
-            else None
-        )
+        if depends is None:
+            self.depends = None
+        elif isinstance(depends, list):
+            self.depends = depends
+        elif isinstance(depends, tuple):
+            self.depends = list(depends)
+        else:
+            self.depends = [depends]
         self.resource = resource
         self.compressed = compressed
         self.unique = unique
@@ -84,14 +109,16 @@ class Resource(ResourceMixin):
         self.additional_attrs = kwargs
 
     @property
-    def file_name(self):
+    def file_name(self) -> str:
         """Resource file name depending on operation mode."""
         if not config.development and self.compressed:
             return self.compressed
+        if self.resource is None:
+            raise ResourceError('No resource file name available')
         return self.resource
 
     @property
-    def file_path(self):
+    def file_path(self) -> str:
         """Absolute resource file path depending on operation mode."""
         directory = self.directory
         if not directory:
@@ -99,33 +126,33 @@ class Resource(ResourceMixin):
         return os.path.join(directory, self.file_name)
 
     @property
-    def file_data(self):
+    def file_data(self) -> bytes:
         """File content of resource depending on operation mode."""
         with open(self.file_path, 'rb') as f:
             return f.read()
 
     @property
-    def file_hash(self):
+    def file_hash(self) -> str:
         """Hash of resource file content."""
         if not config.development and self._file_hash is not None:
             return self._file_hash
         hash_func = self._hash_algorithms[self.hash_algorithm]
         hash_ = base64.b64encode(hash_func(self.file_data).digest())
-        hash_ = hash_.decode()
-        self.file_hash = hash_
-        return hash_
+        hash_str = hash_.decode()
+        self.file_hash = hash_str
+        return hash_str
 
     @file_hash.setter
-    def file_hash(self, hash_):
+    def file_hash(self, hash_: str | None) -> None:
         self._file_hash = hash_
 
     @property
-    def unique_key(self):
+    def unique_key(self) -> str:
         return '{}{}'.format(
             self.unique_prefix, str(uuid.uuid5(namespace_uuid, self.file_hash))
         )
 
-    def resource_url(self, base_url):
+    def resource_url(self, base_url: str) -> str:
         """Create URL for resource.
 
         :param base_url: The base URL to create the URL resource.
@@ -141,7 +168,7 @@ class Resource(ResourceMixin):
         parts.append(self.file_name)
         return '/'.join(parts)
 
-    def render(self, base_url):
+    def render(self, base_url: str) -> str:
         """Renders the resource HTML tag. must be implemented on subclass.
 
         :param base_url: The base URL to create the URL resource.
@@ -149,18 +176,18 @@ class Resource(ResourceMixin):
         """
         raise NotImplementedError('Abstract resource not implements ``render``')
 
-    def _render_tag(self, tag, closing_tag, **attrs):
+    def _render_tag(self, tag: str, closing_tag: bool, **attrs: str | None) -> str:
         attrs_ = list()
         for name, val in attrs.items():
             if val is None:
                 continue
             attrs_.append('{0}="{1}"'.format(name, val))
-        attrs_ = ' {0}'.format(' '.join(sorted(attrs_)))
+        attrs_str = ' {0}'.format(' '.join(sorted(attrs_)))
         if not closing_tag:
-            return '<{tag}{attrs} />'.format(tag=tag, attrs=attrs_)
-        return '<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_)
+            return '<{tag}{attrs} />'.format(tag=tag, attrs=attrs_str)
+        return '<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_str)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ('{} name="{}", depends="{}"').format(
             self.__class__.__name__, self.name, self.depends
         )
@@ -169,29 +196,35 @@ class Resource(ResourceMixin):
 class ScriptResource(Resource):
     """A Javascript resource."""
 
+    async_: str | None
+    defer: str | None
+    _integrity: bool | str | None
+    _integrity_hash: str | None
+    nomodule: str | None
+
     def __init__(
         self,
-        name='',
-        depends=None,
-        directory=None,
-        path=None,
-        resource=None,
-        compressed=None,
-        include=True,
-        unique=False,
-        unique_prefix='++webresource++',
-        hash_algorithm='sha384',
-        group=None,
-        url=None,
-        crossorigin=None,
-        referrerpolicy=None,
-        type_=None,
-        async_=None,
-        defer=None,
-        integrity=None,
-        nomodule=None,
-        **kwargs,
-    ):
+        name: str = '',
+        depends: str | list[str] | tuple[str, ...] | None = None,
+        directory: str | None = None,
+        path: str | None = None,
+        resource: str | None = None,
+        compressed: str | None = None,
+        include: bool | Callable[[], bool] = True,
+        unique: bool = False,
+        unique_prefix: str = '++webresource++',
+        hash_algorithm: str = 'sha384',
+        group: ResourceGroup | None = None,
+        url: str | None = None,
+        crossorigin: str | None = None,
+        referrerpolicy: str | None = None,
+        type_: str | None = None,
+        async_: str | None = None,
+        defer: str | None = None,
+        integrity: bool | str | None = None,
+        nomodule: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Create script resource.
 
         :param name: The resource unique name.
@@ -254,9 +287,9 @@ class ScriptResource(Resource):
         self.nomodule = nomodule
 
     @property
-    def integrity(self):
+    def integrity(self) -> str | None:
         if not self._integrity:
-            return self._integrity
+            return None
         if not config.development and self._integrity_hash is not None:
             return self._integrity_hash
         if self._integrity is True:
@@ -264,17 +297,17 @@ class ScriptResource(Resource):
         return self._integrity_hash
 
     @integrity.setter
-    def integrity(self, integrity):
+    def integrity(self, integrity: bool | str | None) -> None:
         if integrity is True:
             if self.url is not None:
                 msg = 'Cannot calculate integrity hash from external resource'
                 raise ResourceError(msg)
             self._integrity_hash = None
         else:
-            self._integrity_hash = integrity
+            self._integrity_hash = integrity  # type: ignore[assignment]
         self._integrity = integrity
 
-    def render(self, base_url):
+    def render(self, base_url: str) -> str:
         """Renders the resource HTML ``script`` tag.
 
         :param base_url: The base URL to create the URL resource.
@@ -296,30 +329,36 @@ class ScriptResource(Resource):
 class LinkMixin(Resource):
     """Mixin class for link resources."""
 
+    hreflang: str | None
+    media: str | None
+    rel: str | None
+    sizes: str | None
+    title: str | None
+
     def __init__(
         self,
-        name='',
-        depends=None,
-        directory=None,
-        path=None,
-        resource=None,
-        compressed=None,
-        include=True,
-        unique=False,
-        unique_prefix='++webresource++',
-        hash_algorithm='sha384',
-        group=None,
-        url=None,
-        crossorigin=None,
-        referrerpolicy=None,
-        type_=None,
-        hreflang=None,
-        media=None,
-        rel=None,
-        sizes=None,
-        title=None,
-        **kwargs,
-    ):
+        name: str = '',
+        depends: str | list[str] | tuple[str, ...] | None = None,
+        directory: str | None = None,
+        path: str | None = None,
+        resource: str | None = None,
+        compressed: str | None = None,
+        include: bool | Callable[[], bool] = True,
+        unique: bool = False,
+        unique_prefix: str = '++webresource++',
+        hash_algorithm: str = 'sha384',
+        group: ResourceGroup | None = None,
+        url: str | None = None,
+        crossorigin: str | None = None,
+        referrerpolicy: str | None = None,
+        type_: str | None = None,
+        hreflang: str | None = None,
+        media: str | None = None,
+        rel: str | None = None,
+        sizes: str | None = None,
+        title: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         super(LinkMixin, self).__init__(
             name=name,
             depends=depends,
@@ -344,7 +383,7 @@ class LinkMixin(Resource):
         self.sizes = sizes
         self.title = title
 
-    def render(self, base_url):
+    def render(self, base_url: str) -> str:
         """Renders the resource HTML ``link`` tag.
 
         :param base_url: The base URL to create the URL resource.
@@ -369,28 +408,28 @@ class LinkResource(LinkMixin):
 
     def __init__(
         self,
-        name='',
-        depends=None,
-        directory=None,
-        path=None,
-        resource=None,
-        compressed=None,
-        include=True,
-        unique=False,
-        unique_prefix='++webresource++',
-        hash_algorithm='sha384',
-        group=None,
-        url=None,
-        crossorigin=None,
-        referrerpolicy=None,
-        type_=None,
-        hreflang=None,
-        media=None,
-        rel=None,
-        sizes=None,
-        title=None,
-        **kwargs,
-    ):
+        name: str = '',
+        depends: str | list[str] | tuple[str, ...] | None = None,
+        directory: str | None = None,
+        path: str | None = None,
+        resource: str | None = None,
+        compressed: str | None = None,
+        include: bool | Callable[[], bool] = True,
+        unique: bool = False,
+        unique_prefix: str = '++webresource++',
+        hash_algorithm: str = 'sha384',
+        group: ResourceGroup | None = None,
+        url: str | None = None,
+        crossorigin: str | None = None,
+        referrerpolicy: str | None = None,
+        type_: str | None = None,
+        hreflang: str | None = None,
+        media: str | None = None,
+        rel: str | None = None,
+        sizes: str | None = None,
+        title: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Create link resource.
 
         :param name: The resource unique name.
@@ -456,26 +495,26 @@ class StyleResource(LinkMixin):
 
     def __init__(
         self,
-        name='',
-        depends=None,
-        directory=None,
-        path=None,
-        resource=None,
-        compressed=None,
-        include=True,
-        unique=False,
-        unique_prefix='++webresource++',
-        hash_algorithm='sha384',
-        group=None,
-        url=None,
-        crossorigin=None,
-        referrerpolicy=None,
-        hreflang=None,
-        media='all',
-        rel='stylesheet',
-        title=None,
-        **kwargs,
-    ):
+        name: str = '',
+        depends: str | list[str] | tuple[str, ...] | None = None,
+        directory: str | None = None,
+        path: str | None = None,
+        resource: str | None = None,
+        compressed: str | None = None,
+        include: bool | Callable[[], bool] = True,
+        unique: bool = False,
+        unique_prefix: str = '++webresource++',
+        hash_algorithm: str = 'sha384',
+        group: ResourceGroup | None = None,
+        url: str | None = None,
+        crossorigin: str | None = None,
+        referrerpolicy: str | None = None,
+        hreflang: str | None = None,
+        media: str = 'all',
+        rel: str = 'stylesheet',
+        title: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Create link resource.
 
         :param name: The resource unique name.

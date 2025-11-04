@@ -99,9 +99,9 @@ class TestResolver(unittest.TestCase):
         resolver = wr.ResourceResolver([res1, res2, res3])
         self.assertRaises(wr.ResourceCircularDependencyError, resolver.resolve)
 
-        res1 = Resource(name='res1', resource='res1.ext', depends=['res2', 'res3'])
-        res2 = Resource(name='res2', resource='res2.ext', depends=['res1', 'res3'])
-        res3 = Resource(name='res3', resource='res3.ext', depends=['res1', 'res4'])
+        res1 = Resource(name='res1', resource='res1.ext', depends=('res2', 'res3'))
+        res2 = Resource(name='res2', resource='res2.ext', depends=('res1', 'res3'))
+        res3 = Resource(name='res3', resource='res3.ext', depends=('res1', 'res4'))
 
         resolver = wr.ResourceResolver([res1, res2, res3])
         self.assertRaises(wr.ResourceMissingDependencyError, resolver.resolve)

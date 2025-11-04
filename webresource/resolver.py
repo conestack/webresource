@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import Counter
 from webresource.exceptions import ResourceCircularDependencyError
 from webresource.exceptions import ResourceConflictError
@@ -7,10 +9,14 @@ from webresource.groups import ResourceGroup
 from webresource.resources import Resource
 
 
-class ResourceResolver(object):
+class ResourceResolver:
     """Resource resolver."""
 
-    def __init__(self, members):
+    members: list[Resource | ResourceGroup]
+
+    def __init__(
+        self, members: Resource | ResourceGroup | list[Resource | ResourceGroup]
+    ) -> None:
         """Create resource resolver.
 
         :param members: Either single or list of ``Resource`` or
@@ -27,10 +33,12 @@ class ResourceResolver(object):
                 )
         self.members = members
 
-    def _flat_resources(self, members=None):
+    def _flat_resources(
+        self, members: list[Resource | ResourceGroup] | None = None
+    ) -> list[Resource]:
         if members is None:
             members = self.members
-        resources = []
+        resources: list[Resource] = []
         for member in members:
             if not member.include:
                 continue
@@ -40,7 +48,7 @@ class ResourceResolver(object):
                 resources.append(member)
         return resources
 
-    def resolve(self):
+    def resolve(self) -> list[Resource]:
         """Return all resources from members as flat list ordered by
         dependencies.
 
@@ -68,6 +76,7 @@ class ResourceResolver(object):
         while count > 0:
             count -= 1
             for resource in resources[:]:
+                assert resource.depends is not None  # guaranteed by above loop
                 hook_idx = 0
                 not_yet = False
                 for dependency_name in resource.depends:

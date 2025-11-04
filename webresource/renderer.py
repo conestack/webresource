@@ -1,11 +1,17 @@
 from webresource.config import logger
 from webresource.exceptions import ResourceError
+from webresource.resolver import ResourceResolver
 
 
-class ResourceRenderer(object):
+class ResourceRenderer:
     """Resource renderer."""
 
-    def __init__(self, resolver, base_url='https://tld.org'):
+    resolver: ResourceResolver
+    base_url: str
+
+    def __init__(
+        self, resolver: ResourceResolver, base_url: str = 'https://tld.org'
+    ) -> None:
         """Create resource renderer.
 
         :param resolver: ``ResourceResolver`` instance.
@@ -14,7 +20,7 @@ class ResourceRenderer(object):
         self.resolver = resolver
         self.base_url = base_url
 
-    def render(self):
+    def render(self) -> str:
         """Render resources."""
         return '\n'.join([res.render(self.base_url) for res in self.resolver.resolve()])
 
@@ -22,7 +28,7 @@ class ResourceRenderer(object):
 class GracefulResourceRenderer(ResourceRenderer):
     """Resource renderer, which does not fail but logs an exception."""
 
-    def render(self):
+    def render(self) -> str:
         lines = []
         for resource in self.resolver.resolve():
             try:
