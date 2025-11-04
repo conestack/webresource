@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 from collections import Counter
-from webresource._api import (
-    is_py3,
-    LinkMixin,
-    Resource,
-    ResourceConfig,
-    ResourceMixin
-)
+from webresource.base import ResourceMixin
+from webresource.config import is_py3, ResourceConfig
+from webresource.resources import LinkMixin, Resource
 import os
 import shutil
 import tempfile
