@@ -5,30 +5,44 @@ Changelog
 ------------------
 
 - Package Structure Refactoring
+
   - Split monolithic _api.py (736 lines) into 7 semantic modules:
-    - config.py, exceptions.py, base.py, resources.py, groups.py, resolver.py, renderer.py
+
+    - config.py
+    - exceptions.py
+    - base.py
+    - resources.py
+    - groups.py
+    - resolver.py
+    - renderer.py
+
   - Updated __init__.py with explicit __all__ exports
   [rnix]
 
 - Test Suite Reorganization
+
   - Moved tests from webresource/tests.py to tests/ directory at package root
   - Split into 8 focused test files matching the module structure
   - Created tests/test_utils.py for shared test utilities
   - Updated Makefile to use pytest tests
+
   [rnix]
 
 - Build System Modernization
+
   - Migrated from setup.py to pyproject.toml with hatchling backend
   - Python 3.10-3.14 support
+
   [rnix]
 
-- Python 2 Cleanup
-  - Removed all Python 2 compatibility code (is_py3, FileNotFoundError checks)
-  [rnix]
+- Python 2 Cleanup. Removed all Python 2 compatibility code (is_py3,
+  FileNotFoundError checks) [rnix]
 
 - Type Hints
+
   - Added comprehensive Python 3.10+ type hints to all production code
   - Configured mypy in pyproject.toml with strict settings
+
   [rnix]
 
 - Do not wrap resource ``__repr__`` output in ``<>`` to render tracebacks
