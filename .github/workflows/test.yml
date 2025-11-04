@@ -23,22 +23,18 @@ jobs:
           - "3.14"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install
-        run: pip install -e .[test]
+      - name: Show Python version
+        run: python -c "import sys; print(sys.version)"
 
-      - name: Run tests
-        run: |
-          python --version
-          python -m webresource.tests
+      - name: Install environment
+        run: make install
 
-      - name: Run coverage
-        run: |
-          coverage run --source webresource -m webresource.tests
-          coverage report --fail-under=100
+      - name: Run tests an collect code coverage
+        run: make coverage

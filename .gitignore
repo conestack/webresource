@@ -3,9 +3,10 @@
 /.coverage
 /.mxmake
 /.ruff_cache
+/CLAUDE.md
 /build
 /dist/
 /docs/html/
 /htmlcov/
 /requirements-mxdev.txt
-/venv
+/venv/
