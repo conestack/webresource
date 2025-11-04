@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
 from collections import Counter
 from webresource.base import ResourceMixin
-from webresource.config import is_py3, ResourceConfig
+from webresource.config import ResourceConfig
 from webresource.resources import LinkMixin, Resource
 import os
 import shutil
 import tempfile
 import unittest
 import webresource as wr
-
-
-try:
-    FileNotFoundError
-except NameError:  # pragma: nocover
-    FileNotFoundError = EnvironmentError
 
 
 def temp_directory(fn):
@@ -675,18 +669,15 @@ class TestWebresource(unittest.TestCase):
             depends="js",
             unique=True,
         )
-        if is_py3:  # pragma: nocover
-            with self.assertLogs() as captured:
-                rendered = renderer.render()
-                # check that there is only one log message
-                self.assertEqual(len(captured.records), 1)
-                # check if its ours
-                self.assertEqual(
-                    captured.records[0].getMessage().split('\n')[0],
-                    'Failure to render resource "js2"',
-                )
-        else:  # pragma: nocover
+        with self.assertLogs() as captured:
             rendered = renderer.render()
+            # check that there is only one log message
+            self.assertEqual(len(captured.records), 1)
+            # check if its ours
+            self.assertEqual(
+                captured.records[0].getMessage().split('\n')[0],
+                'Failure to render resource "js2"',
+            )
         self.assertEqual(rendered, (
             '<link href="https://tld.org/res/icon.png" '
             'rel="icon" type="image/png" />\n'

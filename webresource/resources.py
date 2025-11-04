@@ -4,7 +4,7 @@ import os
 import uuid
 
 from webresource.base import ResourceMixin
-from webresource.config import config, is_py3, namespace_uuid
+from webresource.config import config, namespace_uuid
 from webresource.exceptions import ResourceError
 
 
@@ -99,7 +99,7 @@ class Resource(ResourceMixin):
             return self._file_hash
         hash_func = self._hash_algorithms[self.hash_algorithm]
         hash_ = base64.b64encode(hash_func(self.file_data).digest())
-        hash_ = hash_.decode() if is_py3 else hash_
+        hash_ = hash_.decode()
         self.file_hash = hash_
         return hash_
 

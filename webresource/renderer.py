@@ -1,11 +1,6 @@
 from webresource.config import logger
 from webresource.exceptions import ResourceError
 
-try:
-    FileNotFoundError
-except NameError:  # pragma: nocover
-    FileNotFoundError = EnvironmentError
-
 
 class ResourceRenderer(object):
     """Resource renderer."""
