@@ -16,9 +16,7 @@ class ResourceRenderer(object):
 
     def render(self):
         """Render resources."""
-        return u'\n'.join([
-            res.render(self.base_url) for res in self.resolver.resolve()
-        ])
+        return '\n'.join([res.render(self.base_url) for res in self.resolver.resolve()])
 
 
 class GracefulResourceRenderer(ResourceRenderer):
@@ -30,7 +28,7 @@ class GracefulResourceRenderer(ResourceRenderer):
             try:
                 lines.append(resource.render(self.base_url))
             except (ResourceError, FileNotFoundError):
-                msg = u'Failure to render resource "{}"'.format(resource.name)
-                lines.append(u'<!-- {} - details in logs -->'.format(msg))
+                msg = 'Failure to render resource "{}"'.format(resource.name)
+                lines.append('<!-- {} - details in logs -->'.format(msg))
                 logger.exception(msg)
-        return u'\n'.join(lines)
+        return '\n'.join(lines)

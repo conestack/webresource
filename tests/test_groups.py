@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-"""Tests for webresource.groups module."""
+from webresource.base import ResourceMixin
+
 import unittest
 import webresource as wr
-from webresource.base import ResourceMixin
 
 
 class TestGroups(unittest.TestCase):
-
     def test_ResourceGroup(self):
         group = wr.ResourceGroup(name='groupname')
         self.assertIsInstance(group, ResourceMixin)
@@ -24,17 +22,14 @@ class TestGroups(unittest.TestCase):
         root_group = wr.ResourceGroup(name='root')
         member_group = wr.ResourceGroup(name='member', group=root_group)
         member_res = wr.ScriptResource(
-            name='res',
-            resource='res.js',
-            group=member_group
+            name='res', resource='res.js', group=member_group
         )
         self.assertTrue(member_group.parent is root_group)
         self.assertTrue(member_res.parent is member_group)
 
         group = wr.ResourceGroup(
-            name='groupname',
-            path='group_path',
-            directory='/path/to/dir')
+            name='groupname', path='group_path', directory='/path/to/dir'
+        )
         group.add(wr.ResourceGroup(name='group1'))
         wr.ResourceGroup(name='group2', group=group)
 
@@ -54,16 +49,13 @@ class TestGroups(unittest.TestCase):
         wr.LinkResource(name='group-link', resource='group.link', group=group)
 
         self.assertEqual(
-            sorted([res.name for res in root.scripts]),
-            ['group-script', 'root-script']
+            sorted([res.name for res in root.scripts]), ['group-script', 'root-script']
         )
         self.assertEqual(
-            sorted([res.name for res in root.styles]),
-            ['group-style', 'root-style']
+            sorted([res.name for res in root.styles]), ['group-style', 'root-style']
         )
         self.assertEqual(
-            sorted([res.name for res in root.links]),
-            ['group-link', 'root-link']
+            sorted([res.name for res in root.links]), ['group-link', 'root-link']
         )
 
         resource = wr.Resource(resource='res')

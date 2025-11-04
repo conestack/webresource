@@ -1,11 +1,8 @@
 from collections import Counter
-
-from webresource.exceptions import (
-    ResourceCircularDependencyError,
-    ResourceConflictError,
-    ResourceError,
-    ResourceMissingDependencyError
-)
+from webresource.exceptions import ResourceCircularDependencyError
+from webresource.exceptions import ResourceConflictError
+from webresource.exceptions import ResourceError
+from webresource.exceptions import ResourceMissingDependencyError
 from webresource.groups import ResourceGroup
 from webresource.resources import Resource
 

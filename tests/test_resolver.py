@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-"""Tests for webresource.resolver module."""
+from webresource.resources import Resource
+
 import unittest
 import webresource as wr
-from webresource.resources import Resource
 
 
 class TestResolver(unittest.TestCase):
-
     def test_ResourceResolver__flat_resources(self):
         self.assertRaises(wr.ResourceError, wr.ResourceResolver, object())
 
@@ -43,10 +41,12 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(resolver._flat_resources(), [res1])
 
     def test_ResourceResolver_resolve(self):
-        resolver = wr.ResourceResolver([
-            Resource(name='res', resource='res.ext'),
-            Resource(name='res', resource='res.ext')
-        ])
+        resolver = wr.ResourceResolver(
+            [
+                Resource(name='res', resource='res.ext'),
+                Resource(name='res', resource='res.ext'),
+            ]
+        )
         self.assertRaises(wr.ResourceConflictError, resolver.resolve)
 
         res1 = Resource(name='res1', resource='res1.ext', depends='res2')

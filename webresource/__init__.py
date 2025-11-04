@@ -1,19 +1,13 @@
 from webresource.config import config  # noqa
-from webresource.exceptions import (  # noqa
-    ResourceCircularDependencyError,
-    ResourceConflictError,
-    ResourceError,
-    ResourceMissingDependencyError
-)
+from webresource.exceptions import ResourceCircularDependencyError  # noqa
+from webresource.exceptions import ResourceConflictError  # noqa
+from webresource.exceptions import ResourceError  # noqa
+from webresource.exceptions import ResourceMissingDependencyError  # noqa
 from webresource.groups import ResourceGroup  # noqa
-from webresource.renderer import (  # noqa
-    GracefulResourceRenderer,
-    ResourceRenderer
-)
+from webresource.renderer import GracefulResourceRenderer  # noqa
+from webresource.renderer import ResourceRenderer  # noqa
 from webresource.resolver import ResourceResolver  # noqa
-from webresource.resources import (  # noqa
-    LinkResource,
-    Resource,
-    ScriptResource,
-    StyleResource
-)
+from webresource.resources import LinkResource  # noqa
+from webresource.resources import Resource  # noqa
+from webresource.resources import ScriptResource  # noqa
+from webresource.resources import StyleResource  # noqa

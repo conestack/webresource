@@ -48,5 +48,15 @@ include = ["docs/source/overview.rst"]
 [tool.hatch.build.targets.wheel]
 packages = ["webresource"]
 
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.isort]
+py_version = 310
+profile = "plone"
+
 [tool.zest-releaser]
 create-wheel = true

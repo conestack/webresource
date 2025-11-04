@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Shared test utilities for webresource tests."""
 import os
 import shutil
 import tempfile
@@ -7,6 +5,7 @@ import tempfile
 
 def temp_directory(fn):
     """Decorator that provides a temporary directory to test functions."""
+
     def wrapper(*a, **kw):
         tempdir = tempfile.mkdtemp()
         kw['tempdir'] = tempdir
@@ -14,6 +13,7 @@ def temp_directory(fn):
             fn(*a, **kw)
         finally:
             shutil.rmtree(tempdir)
+
     return wrapper
 
 

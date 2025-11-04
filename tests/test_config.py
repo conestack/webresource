@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-"""Tests for webresource.config module."""
+from webresource.config import ResourceConfig
+
 import unittest
 import webresource as wr
-from webresource.config import ResourceConfig
 
 
 class TestConfig(unittest.TestCase):
-
     def test_ResourceConfig(self):
         config = ResourceConfig()
         self.assertIsInstance(wr.config, ResourceConfig)

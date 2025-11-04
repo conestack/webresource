@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
-"""Tests for webresource.base module."""
+from tests.test_utils import np
+from webresource.base import ResourceMixin
+
 import os
 import unittest
-from webresource.base import ResourceMixin
-from tests.test_utils import np
 
 
 class TestBase(unittest.TestCase):
-
     def test_ResourceMixin(self):
-        mixin = ResourceMixin(
-            name='name', path='path', include=True
-        )
+        mixin = ResourceMixin(name='name', path='path', include=True)
         self.assertEqual(mixin.name, 'name')
         self.assertEqual(mixin.path, 'path')
         self.assertEqual(mixin.include, True)

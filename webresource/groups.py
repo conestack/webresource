@@ -1,19 +1,15 @@
 from webresource.base import ResourceMixin
 from webresource.exceptions import ResourceError
-from webresource.resources import (
-    LinkResource,
-    Resource,
-    ScriptResource,
-    StyleResource
-)
+from webresource.resources import LinkResource
+from webresource.resources import Resource
+from webresource.resources import ScriptResource
+from webresource.resources import StyleResource
 
 
 class ResourceGroup(ResourceMixin):
     """A resource group."""
 
-    def __init__(
-        self, name='', directory=None, path=None, include=True, group=None
-    ):
+    def __init__(self, name='', directory=None, path=None, include=True, group=None):
         """Create resource group.
 
         :param name: The resource group name.
@@ -25,8 +21,7 @@ class ResourceGroup(ResourceMixin):
         :param group: Optional resource group instance.
         """
         super(ResourceGroup, self).__init__(
-            name=name, directory=directory, path=path,
-            include=include, group=group
+            name=name, directory=directory, path=path, include=include, group=group
         )
         self._members = []
 
@@ -82,16 +77,10 @@ class ResourceGroup(ResourceMixin):
         resources = []
         for member in members:
             if isinstance(member, ResourceGroup):
-                resources += self._filtered_resources(
-                    type_,
-                    members=member.members
-                )
+                resources += self._filtered_resources(type_, members=member.members)
             elif isinstance(member, type_):
                 resources.append(member)
         return resources
 
     def __repr__(self):
-        return '{} name="{}"'.format(
-            self.__class__.__name__,
-            self.name
-        )
+        return '{} name="{}"'.format(self.__class__.__name__, self.name)

@@ -1,15 +1,13 @@
+from webresource.exceptions import ResourceError
+
 import copy
 import os
-
-from webresource.exceptions import ResourceError
 
 
 class ResourceMixin(object):
     """Mixin for ``Resource`` and ``ResourceGroup``."""
 
-    def __init__(
-        self, name='', directory=None, path=None, include=True, group=None
-    ):
+    def __init__(self, name='', directory=None, path=None, include=True, group=None):
         self.name = name
         self.directory = directory
         self.path = path
