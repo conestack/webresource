@@ -97,7 +97,7 @@ class TestResources(unittest.TestCase):
 
         wr.config.development = False
         with open(os.path.join(tempdir, 'res'), 'wb') as f:
-            f.write('Resource Content ä'.encode('utf8'))
+            f.write('Resource Content ä'.encode())
 
         resource = Resource(name='res', resource='res', directory=tempdir)
         self.assertEqual(resource.file_data, b'Resource Content \xc3\xa4')
@@ -115,7 +115,7 @@ class TestResources(unittest.TestCase):
 
         resource.unique = True
         resource_url = resource.resource_url('https://tld.org')
-        self.assertEqual(resource_url, 'https://tld.org/{}/res'.format(unique_key))
+        self.assertEqual(resource_url, f'https://tld.org/{unique_key}/res')
 
         with open(os.path.join(tempdir, 'res'), 'w') as f:
             f.write('Changed Content')
@@ -124,13 +124,13 @@ class TestResources(unittest.TestCase):
         self.assertEqual(resource.file_hash, hash_)
 
         resource_url = resource.resource_url('https://tld.org')
-        self.assertEqual(resource_url, 'https://tld.org/{}/res'.format(unique_key))
+        self.assertEqual(resource_url, f'https://tld.org/{unique_key}/res')
 
         wr.config.development = True
         self.assertNotEqual(resource.file_hash, hash_)
 
         resource_url = resource.resource_url('https://tld.org')
-        self.assertNotEqual(resource_url, 'https://tld.org/{}/res'.format(unique_key))
+        self.assertNotEqual(resource_url, f'https://tld.org/{unique_key}/res')
 
         resource = Resource(name='res', resource='res.ext', custom_attr='value')
         self.assertEqual(resource.additional_attrs, dict(custom_attr='value'))
@@ -167,19 +167,19 @@ class TestResources(unittest.TestCase):
         )
         hash_ = 'omjyXfsb+ti/5fpn4QjjSYjpKRnxWpzc6rIUE6mXxyDjbLS9AotgsLWQZtylXicX'
         self.assertEqual(script.file_hash, hash_)
-        self.assertEqual(script.integrity, 'sha384-{}'.format(hash_))
+        self.assertEqual(script.integrity, f'sha384-{hash_}')
 
         rendered = script.render('https://tld.org')
-        expected = 'integrity="sha384-{}"'.format(hash_)
+        expected = f'integrity="sha384-{hash_}"'
         self.assertTrue(rendered.find(expected))
 
         with open(os.path.join(tempdir, 'script.js'), 'w') as f:
             f.write('Changed Script')
 
-        self.assertEqual(script.integrity, 'sha384-{}'.format(hash_))
+        self.assertEqual(script.integrity, f'sha384-{hash_}')
 
         wr.config.development = True
-        self.assertNotEqual(script.integrity, 'sha384-{}'.format(hash_))
+        self.assertNotEqual(script.integrity, f'sha384-{hash_}')
 
         script = wr.ScriptResource(name='js_res', resource='res.js', custom='value')
         self.assertEqual(
