@@ -186,7 +186,7 @@ class Resource(ResourceMixin):
         return f'<{tag}{attrs_str}></{tag}>'
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__} name="{self.name}", depends="{self.depends}"')
+        return f'{self.__class__.__name__} name="{self.name}", depends="{self.depends}"'
 
 
 class ScriptResource(Resource):
