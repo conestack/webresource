@@ -122,6 +122,7 @@ addopts = [
 source = ["webresource"]
 omit = ["webresource/_version.py", "tests/*/py"]
 parallel = true
+relative_files = true
 
 [tool.coverage.report]
 fail_under = 100
