@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "webresource"
 description = "A resource registry for web applications."
 dynamic = ["version", "readme"]
+requires-python = ">=3.10"
 keywords = ["web", "resources", "dependencies", "javascript", "CSS"]
 authors = [{name = "Conestack Constributors", email = "dev@conestack.org"}]
 license = {text = "Simplified BSD"}
@@ -110,8 +111,7 @@ disallow_untyped_defs = true
 disallow_any_generics = false
 
 [tool.pytest.ini_options]
-testpaths = ["webresource"]
-python_files = ["tests.py"]
+testpaths = ["tests"]
 addopts = [
     "--strict-markers",
     "--strict-config",
@@ -120,7 +120,7 @@ addopts = [
 
 [tool.coverage.run]
 source = ["webresource"]
-omit = ["webresource/_version.py", "webresource/tests.py"]
+omit = ["webresource/_version.py", "tests/*/py"]
 
 [tool.coverage.report]
 fail_under = 100
