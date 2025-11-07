@@ -85,7 +85,7 @@ class Resource(ResourceMixin):
         """
         if resource is None and url is None:
             raise ResourceError('Either resource or url must be given')
-        super(Resource, self).__init__(
+        super().__init__(
             name=name, directory=directory, path=path, include=include, group=group
         )
         if depends is None:
@@ -180,7 +180,7 @@ class Resource(ResourceMixin):
             if val is None:
                 continue
             attrs_.append(f'{name}="{val}"')
-        attrs_str = ' {0}'.format(' '.join(sorted(attrs_)))
+        attrs_str = ' {}'.format(' '.join(sorted(attrs_)))
         if not closing_tag:
             return f'<{tag}{attrs_str} />'
         return f'<{tag}{attrs_str}></{tag}>'
@@ -259,7 +259,7 @@ class ScriptResource(Resource):
             additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
-        super(ScriptResource, self).__init__(
+        super().__init__(
             name=name,
             depends=depends,
             directory=directory,
@@ -355,7 +355,7 @@ class LinkMixin(Resource):
         title: str | None = None,
         **kwargs: Any,
     ) -> None:
-        super(LinkMixin, self).__init__(
+        super().__init__(
             name=name,
             depends=depends,
             directory=directory,
@@ -461,7 +461,7 @@ class LinkResource(LinkMixin):
             additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
-        super(LinkResource, self).__init__(
+        super().__init__(
             name=name,
             depends=depends,
             directory=directory,
@@ -543,7 +543,7 @@ class StyleResource(LinkMixin):
             additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
-        super(StyleResource, self).__init__(
+        super().__init__(
             name=name,
             depends=depends,
             directory=directory,
