@@ -172,7 +172,7 @@ COVERAGE_COMMAND?=\
 	coverage run \
 		--source webresource \
 		-m pytest tests \
-	&& coverage combine \
+	&& coverage combine --keep \
 	&& coverage report --fail-under=100
 
 ## qa.mypy
