@@ -121,6 +121,7 @@ addopts = [
 [tool.coverage.run]
 source = ["webresource"]
 omit = ["webresource/_version.py", "tests/*/py"]
+parallel = true
 
 [tool.coverage.report]
 fail_under = 100
