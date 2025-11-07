@@ -37,12 +37,12 @@ class TestResources(unittest.TestCase):
 
         resource = Resource(name='res', url='http://tld.net/resource')
         with self.assertRaises(wr.ResourceError):
-            resource.file_name
+            resource.file_name  # noqa: B018
 
         resource = Resource(name='res', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
         with self.assertRaises(wr.ResourceError):
-            resource.file_path
+            resource.file_path  # noqa: B018
 
         resource = Resource(name='res', directory='/dir', resource='res.ext')
         self.assertEqual(resource.file_name, 'res.ext')
