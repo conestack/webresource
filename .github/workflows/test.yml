@@ -88,9 +88,10 @@ jobs:
 
       - name: Combine coverage & fail if it's <100%
         run: |
-          uv run coverage combine
-          uv run coverage html --skip-covered --skip-empty
-          uv run coverage report --fail-under=100
+          source venv/bin/activate
+          coverage combine
+          coverage html --skip-covered --skip-empty
+          coverage report --fail-under=100
 
       - name: Upload HTML report if check failed
         uses: actions/upload-artifact@v4
