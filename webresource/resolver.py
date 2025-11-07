@@ -76,7 +76,8 @@ class ResourceResolver:
         while count > 0:
             count -= 1
             for resource in resources[:]:
-                assert resource.depends is not None  # guaranteed by above loop
+                # guaranteed by above loop
+                assert resource.depends is not None  # noqa: S101
                 hook_idx = 0
                 not_yet = False
                 for dependency_name in resource.depends:
