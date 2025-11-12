@@ -85,7 +85,7 @@ class Resource(ResourceMixin):
         """
         if resource is None and url is None:
             raise ResourceError('Either resource or url must be given')
-        super(Resource, self).__init__(
+        super().__init__(
             name=name, directory=directory, path=path, include=include, group=group
         )
         if depends is None:
@@ -148,9 +148,7 @@ class Resource(ResourceMixin):
 
     @property
     def unique_key(self) -> str:
-        return '{}{}'.format(
-            self.unique_prefix, str(uuid.uuid5(namespace_uuid, self.file_hash))
-        )
+        return f'{self.unique_prefix}{str(uuid.uuid5(namespace_uuid, self.file_hash))}'
 
     def resource_url(self, base_url: str) -> str:
         """Create URL for resource.
@@ -181,16 +179,14 @@ class Resource(ResourceMixin):
         for name, val in attrs.items():
             if val is None:
                 continue
-            attrs_.append('{0}="{1}"'.format(name, val))
-        attrs_str = ' {0}'.format(' '.join(sorted(attrs_)))
+            attrs_.append(f'{name}="{val}"')
+        attrs_str = ' {}'.format(' '.join(sorted(attrs_)))
         if not closing_tag:
-            return '<{tag}{attrs} />'.format(tag=tag, attrs=attrs_str)
-        return '<{tag}{attrs}></{tag}>'.format(tag=tag, attrs=attrs_str)
+            return f'<{tag}{attrs_str} />'
+        return f'<{tag}{attrs_str}></{tag}>'
 
     def __repr__(self) -> str:
-        return ('{} name="{}", depends="{}"').format(
-            self.__class__.__name__, self.name, self.depends
-        )
+        return f'{self.__class__.__name__} name="{self.name}", depends="{self.depends}"'
 
 
 class ScriptResource(Resource):
@@ -263,7 +259,7 @@ class ScriptResource(Resource):
             additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
-        super(ScriptResource, self).__init__(
+        super().__init__(
             name=name,
             depends=depends,
             directory=directory,
@@ -293,7 +289,7 @@ class ScriptResource(Resource):
         if not config.development and self._integrity_hash is not None:
             return self._integrity_hash
         if self._integrity is True:
-            self._integrity_hash = '{}-{}'.format(self.hash_algorithm, self.file_hash)
+            self._integrity_hash = f'{self.hash_algorithm}-{self.file_hash}'
         return self._integrity_hash
 
     @integrity.setter
@@ -359,7 +355,7 @@ class LinkMixin(Resource):
         title: str | None = None,
         **kwargs: Any,
     ) -> None:
-        super(LinkMixin, self).__init__(
+        super().__init__(
             name=name,
             depends=depends,
             directory=directory,
@@ -465,7 +461,7 @@ class LinkResource(LinkMixin):
             additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
-        super(LinkResource, self).__init__(
+        super().__init__(
             name=name,
             depends=depends,
             directory=directory,
@@ -547,7 +543,7 @@ class StyleResource(LinkMixin):
             additional attributes on resource tag.
         :raise ResourceError: No resource and no url given.
         """
-        super(StyleResource, self).__init__(
+        super().__init__(
             name=name,
             depends=depends,
             directory=directory,

@@ -3,6 +3,7 @@
 /.coverage
 /.mxmake
 /.ruff_cache
+/webresource/_version.py
 /CLAUDE.md
 /build
 /dist/

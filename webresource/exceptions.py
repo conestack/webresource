@@ -20,21 +20,21 @@ class ResourceConflictError(ResourceError):
         for name, count in counter.items():
             if count > 1:
                 conflicting.append(name)
-        msg = 'Conflicting resource names: {}'.format(sorted(conflicting))
-        super(ResourceConflictError, self).__init__(msg)
+        msg = f'Conflicting resource names: {sorted(conflicting)}'
+        super().__init__(msg)
 
 
 class ResourceCircularDependencyError(ResourceError):
     """Resources define circular dependencies."""
 
     def __init__(self, resources: list[Resource]) -> None:
-        msg = 'Resources define circular dependencies: {}'.format(resources)
-        super(ResourceCircularDependencyError, self).__init__(msg)
+        msg = f'Resources define circular dependencies: {resources}'
+        super().__init__(msg)
 
 
 class ResourceMissingDependencyError(ResourceError):
     """Resource depends on a missing resource."""
 
     def __init__(self, resource: Resource) -> None:
-        msg = 'Resource defines missing dependency: {}'.format(resource)
-        super(ResourceMissingDependencyError, self).__init__(msg)
+        msg = f'Resource defines missing dependency: {resource}'
+        super().__init__(msg)

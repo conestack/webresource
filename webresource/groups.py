@@ -36,7 +36,7 @@ class ResourceGroup(ResourceMixin):
             include the resource group.
         :param group: Optional resource group instance.
         """
-        super(ResourceGroup, self).__init__(
+        super().__init__(
             name=name, directory=directory, path=path, include=include, group=group
         )
         self._members = []
@@ -101,4 +101,4 @@ class ResourceGroup(ResourceMixin):
         return resources
 
     def __repr__(self) -> str:
-        return '{} name="{}"'.format(self.__class__.__name__, self.name)
+        return f'{self.__class__.__name__} name="{self.name}"'

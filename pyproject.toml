@@ -1,12 +1,12 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [project]
 name = "webresource"
-version = "2.0.0.dev0"
 description = "A resource registry for web applications."
-readme = {file = "README.rst", content-type = "text/x-rst"}
+dynamic = ["version", "readme"]
+requires-python = ">=3.10"
 keywords = ["web", "resources", "dependencies", "javascript", "CSS"]
 authors = [{name = "Conestack Constributors", email = "dev@conestack.org"}]
 license = {text = "Simplified BSD"}
@@ -41,6 +41,27 @@ ChangeLog = "https://github.com/conestack/webresource/blob/master/CHANGES.rst"
 "Issue Tracker" = "https://github.com/conestack/webresource/issues"
 "Source Code" = "https://github.com/conestack/webresource"
 
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "webresource/_version.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/x-rst"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.rst"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "CHANGES.rst"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "LICENSE.rst"
+
 [tool.hatch.build.targets.sdist]
 exclude = ["/docs"]
 include = ["docs/source/overview.rst"]
@@ -50,9 +71,32 @@ packages = ["webresource"]
 
 [tool.ruff]
 target-version = "py310"
+line-length = 88
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "webresource/_version.py",
+]
 
 [tool.ruff.format]
 quote-style = "single"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "S",   # bandit (security)
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["S101"]  # Allow assert in tests
 
 [tool.isort]
 py_version = 310
@@ -66,5 +110,31 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_any_generics = false
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+]
+
+[tool.coverage.run]
+source = ["webresource"]
+omit = ["webresource/_version.py", "tests/*/py"]
+parallel = true
+relative_files = true
+
+[tool.coverage.report]
+fail_under = 100
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+# Keep for backward compatibility, but can be removed later
 [tool.zest-releaser]
 create-wheel = true
