@@ -9,6 +9,10 @@ webresource
     :target: https://pypi.python.org/pypi/webresource
     :alt: Number of PyPI downloads
 
+.. image:: https://github.com/conestack/webresource/actions/workflows/test.yml/badge.svg
+    :target: https://github.com/conestack/webresource/actions/workflows/test.yml
+    :alt: Test webresource
+
 **A resource registry for web applications.**
 
 Webresource is a compact Python library to declare resources
