@@ -88,7 +88,7 @@ class Resource(ResourceMixin):
         super(Resource, self).__init__(
             name=name, directory=directory, path=path, include=include, group=group
         )
-        if depends is None:
+        if not depends:
             self.depends = None
         elif isinstance(depends, list):
             self.depends = depends
