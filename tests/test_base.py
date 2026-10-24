@@ -1,6 +1,5 @@
 from tests.test_utils import np
 from webresource.base import ResourceMixin
-
 import os
 import unittest
 

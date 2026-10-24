@@ -1,5 +1,4 @@
 from webresource.base import ResourceMixin
-
 import unittest
 import webresource as wr
 
@@ -21,9 +20,7 @@ class TestGroups(unittest.TestCase):
 
         root_group = wr.ResourceGroup(name='root')
         member_group = wr.ResourceGroup(name='member', group=root_group)
-        member_res = wr.ScriptResource(
-            name='res', resource='res.js', group=member_group
-        )
+        member_res = wr.ScriptResource(name='res', resource='res.js', group=member_group)
         self.assertTrue(member_group.parent is root_group)
         self.assertTrue(member_res.parent is member_group)
 

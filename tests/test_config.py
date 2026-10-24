@@ -1,5 +1,4 @@
 from webresource.config import ResourceConfig
-
 import unittest
 import webresource as wr
 

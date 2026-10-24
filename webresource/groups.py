@@ -101,4 +101,4 @@ class ResourceGroup(ResourceMixin):
         return resources
 
     def __repr__(self) -> str:
-        return '{} name="{}"'.format(self.__class__.__name__, self.name)
+        return f'{self.__class__.__name__} name="{self.name}"'

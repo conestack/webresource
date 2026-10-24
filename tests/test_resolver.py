@@ -1,5 +1,4 @@
 from webresource.resources import Resource
-
 import unittest
 import webresource as wr
 

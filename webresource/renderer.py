@@ -34,7 +34,7 @@ class GracefulResourceRenderer(ResourceRenderer):
             try:
                 lines.append(resource.render(self.base_url))
             except (ResourceError, FileNotFoundError):
-                msg = 'Failure to render resource "{}"'.format(resource.name)
-                lines.append('<!-- {} - details in logs -->'.format(msg))
+                msg = f'Failure to render resource "{resource.name}"'
+                lines.append(f'<!-- {msg} - details in logs -->')
                 logger.exception(msg)
         return '\n'.join(lines)

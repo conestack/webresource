@@ -8,7 +8,6 @@
 #: core.packages
 #: docs.sphinx
 #: qa.coverage
-#: qa.isort
 #: qa.mypy
 #: qa.ruff
 #: qa.test
@@ -110,11 +109,15 @@ MXMAKE?=mxmake
 # Default: src
 RUFF_SRC?=webresource tests
 
-## qa.isort
+# Enable ruff check --fix when running ruff-format.
+# Set to `true` to enable automatic fixes.
+# Default: false
+RUFF_FIXES?=false
 
-# Source folder to scan for Python files to run isort on.
-# Default: src
-ISORT_SRC?=webresource tests
+# Enable unsafe fixes when RUFF_FIXES is enabled.
+# Set to `true` to enable unsafe fixes.
+# Default: false
+RUFF_UNSAFE_FIXES?=false
 
 ## docs.sphinx
 
@@ -349,6 +352,15 @@ ifeq ($(RUFF_SRC),src)
 RUFF_SRC:=$(PYTHON_PROJECT_PREFIX)src
 endif
 
+# Build ruff check flags based on settings
+ifeq ("$(RUFF_FIXES)","true")
+ifeq ("$(RUFF_UNSAFE_FIXES)","true")
+RUFF_FIX_FLAGS=--fix --unsafe-fixes
+else
+RUFF_FIX_FLAGS=--fix
+endif
+endif
+
 RUFF_TARGET:=$(SENTINEL_FOLDER)/ruff.sentinel
 $(RUFF_TARGET): $(MXENV_TARGET)
 	@echo "Install Ruff"
@@ -364,6 +376,10 @@ ruff-check: $(RUFF_TARGET)
 ruff-format: $(RUFF_TARGET)
 	@echo "Run ruff format"
 	@ruff format $(RUFF_SRC)
+ifeq ("$(RUFF_FIXES)","true")
+	@echo "Run ruff check $(RUFF_FIX_FLAGS)"
+	@ruff check $(RUFF_FIX_FLAGS) $(RUFF_SRC)
+endif
 
 .PHONY: ruff-dirty
 ruff-dirty:
@@ -379,45 +395,6 @@ CHECK_TARGETS+=ruff-check
 FORMAT_TARGETS+=ruff-format
 DIRTY_TARGETS+=ruff-dirty
 CLEAN_TARGETS+=ruff-clean
-
-##############################################################################
-# isort
-##############################################################################
-
-# Adjust ISORT_SRC to respect PROJECT_PATH_PYTHON if still at default
-ifeq ($(ISORT_SRC),src)
-ISORT_SRC:=$(PYTHON_PROJECT_PREFIX)src
-endif
-
-ISORT_TARGET:=$(SENTINEL_FOLDER)/isort.sentinel
-$(ISORT_TARGET): $(MXENV_TARGET)
-	@echo "Install isort"
-	@$(PYTHON_PACKAGE_COMMAND) install isort
-	@touch $(ISORT_TARGET)
-
-.PHONY: isort-check
-isort-check: $(ISORT_TARGET)
-	@echo "Run isort check"
-	@isort --check $(ISORT_SRC)
-
-.PHONY: isort-format
-isort-format: $(ISORT_TARGET)
-	@echo "Run isort format"
-	@isort $(ISORT_SRC)
-
-.PHONY: isort-dirty
-isort-dirty:
-	@rm -f $(ISORT_TARGET)
-
-.PHONY: isort-clean
-isort-clean: isort-dirty
-	@test -e $(MXENV_PYTHON) && $(MXENV_PYTHON) -m pip uninstall -y isort || :
-
-INSTALL_TARGETS+=$(ISORT_TARGET)
-CHECK_TARGETS+=isort-check
-FORMAT_TARGETS+=isort-format
-DIRTY_TARGETS+=isort-dirty
-CLEAN_TARGETS+=isort-clean
 
 ##############################################################################
 # sphinx
