@@ -4,7 +4,8 @@ Changelog
 2.0.1 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Declare ``requires-python = ">=3.10"``.
+  [rnix]
 
 
 2.0.0 (2026-02-03)
